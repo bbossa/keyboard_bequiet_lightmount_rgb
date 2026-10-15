@@ -1,0 +1,15 @@
+post_install() {
+    echo '>> lightmount: enable the daemon for your user (no sudo):'
+    echo '     systemctl --user enable --now lightmount.service'
+    echo '   Config: cp /usr/share/lightmount/config.toml ~/.config/lightmount/config.toml'
+    echo '   then: lightmount check && lightmount status'
+    echo '   The udev rule takes effect after replugging the keyboard (or a new login).'
+}
+
+post_upgrade() {
+    echo '>> lightmount: systemctl --user restart lightmount.service to load the new version'
+}
+
+pre_remove() {
+    echo '>> lightmount: disable the daemon for each user: systemctl --user disable --now lightmount.service'
+}

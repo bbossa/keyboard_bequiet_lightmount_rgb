@@ -1,0 +1,29 @@
+# Maintainer: mithsuki <mithsuki@id.chabenj.fr>
+pkgname=lightmount
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Lighting control for the be quiet! Light Mount keyboard (zones, alerts) without IO Center'
+arch=('any')
+url='https://github.com/bbossa/keyboard_bequiet_lightmount_rgb'
+license=('GPL-2.0-or-later')
+depends=('python>=3.11' 'systemd')
+makedepends=('make')
+checkdepends=('util-linux')
+optdepends=('fish: shell error alerts (hook loaded automatically)'
+            'bash: shell error alerts (source /usr/share/lightmount/lightmount.bash)'
+            'zsh: shell error alerts (source /usr/share/lightmount/lightmount.zsh)')
+install=lightmount.install
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')  # replace with the real sum (updpkgsums) once the v$pkgver tag is published
+_srcdir=keyboard_bequiet_lightmount_rgb-$pkgver
+
+check() {
+    cd "$_srcdir"
+    make test
+}
+
+package() {
+    cd "$_srcdir"
+    make DESTDIR="$pkgdir" PREFIX=/usr install
+    install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

@@ -1,0 +1,8 @@
+#!/usr/bin/python3 -I
+"""lightmount command (system install): the package lives in @LIBDIR@."""
+import sys
+
+sys.path.insert(0, '@LIBDIR@')
+from lightmount.cli import main  # noqa: E402
+
+main()

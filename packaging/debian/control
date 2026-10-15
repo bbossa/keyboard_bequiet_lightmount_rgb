@@ -1,0 +1,18 @@
+Package: lightmount
+Version: @VERSION@
+Architecture: all
+Maintainer: mithsuki <mithsuki@id.chabenj.fr>
+Installed-Size: @INSTALLED_SIZE@
+Depends: python3 (>= 3.11), systemd, udev
+Suggests: fish, zsh
+Section: utils
+Priority: optional
+Homepage: https://github.com/bbossa/keyboard_bequiet_lightmount_rgb
+Description: lighting control for the be quiet! Light Mount keyboard
+ Drives the per-key lighting of the be quiet! Light Mount keyboard (USB
+ 373f:0002) without the vendor's IO Center: fixed color zones, reapplied
+ at login, on replug and after the Fn effect keys, plus short alerts on
+ desktop notifications and failed shell commands.
+ .
+ Runs as a systemd user service. Only frames checked against captures of
+ the vendor software are sent; no firmware update is ever performed.

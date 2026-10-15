@@ -1,0 +1,15 @@
+[Unit]
+Description=be quiet! Light Mount lighting (zones + alerts)
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+ExecStart=%h/.local/bin/lightmount watch
+ExecStopPost=/usr/bin/rm -f %t/lightmount.fifo
+Restart=on-failure
+RestartSec=5
+# 2 = invalid config: restarting would fail the same way
+RestartPreventExitStatus=2
+
+[Install]
+WantedBy=graphical-session.target

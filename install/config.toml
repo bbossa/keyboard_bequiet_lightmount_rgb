@@ -1,0 +1,68 @@
+# lightmount configuration: lighting of the be quiet! Light Mount keyboard.
+# Location: ~/.config/lightmount/config.toml
+# Check it with `lightmount check` (does not touch the keyboard), then apply
+# with `lightmount apply` or `systemctl --user restart lightmount`.
+#
+# Colors are "RRGGBB" hex strings. LED rendering: too much green turns yellow
+# (ff6a00 looks yellow, ff2a00 looks orange). Pure white is harsh on the strips.
+
+[device]
+# Several Light Mount keyboards plugged in: pick one by its USB port path, as
+# listed in the error message (or `ls /sys/bus/usb/devices`).
+# usb_path = "1-7.2"
+
+# Only versions tested with lightmount are written to. Another version is
+# read-only (warning in the log) unless this is set to true.
+allow_unknown_firmware = false
+
+# --- zones -----------------------------------------------------------------
+# Each LED belongs to at most one zone. LEDs in no zone keep their previous
+# color (off after a mode switch); `lightmount check` lists them.
+#
+# Predefined zones can be given as a plain color:
+#   top = "49412f"
+# or as a table, which also allows custom zones:
+#   [zones.<name>]
+#   leds = ["00-2c", "2d"]   vendor LED indexes (hex), single or ranges
+#   color = "f4dbae"
+#   dim = 0.3                optional, 0..1: scales the color (no brightness in custom mode)
+#
+# Vendor LED indexes (row by row, left to right):
+#   00-2c  top strip          2d     knob
+#   2e-9d  keys (62 and 89 do not exist; ranges may span them)
+#   9e-a2  left side strip    a3-a7  right side strip
+# This section replaces the default zones entirely.
+
+[zones.top]
+leds = ["00-2c"]
+color = "49412f"   # pokegawa warm white f4dbae, dimmed
+
+[zones.knob]
+leds = ["2d"]
+color = "ff2a00"
+
+[zones.keys]
+leds = ["2e-9d"]
+color = "ff2a00"
+
+[zones.left]
+leds = ["9e-a2"]
+color = "0000ff"
+
+[zones.right]
+leds = ["a3-a7"]
+color = "ff0000"
+
+# --- alerts ----------------------------------------------------------------
+# An alert colors one zone for `duration` seconds, then restores its color.
+
+[alerts]
+zone = "top"         # any zone above, e.g. "knob" for a discreet alert
+duration = 1.25      # seconds
+normal = "00ff00"    # desktop notification
+critical = "ff0000"  # critical notification (urgency 2)
+error = "0000ff"     # failed shell command (exit status not 0 or 130)
+
+[alerts.sources]
+notifications = true # D-Bus notifications (only the urgency is read, never the content)
+shell = true         # shell hook (fish: ~/.config/fish/conf.d/lightmount.fish)

@@ -1,0 +1,91 @@
+# Tests on every supported Python, then the .deb and the Arch package are built and installed.
+# Also called by release.yml before a release.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: tests (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.11', '3.12', '3.13', '3.14']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Shells for the hook tests
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq zsh fish
+      - name: Tests (no keyboard needed)
+        run: make test PYTHON=python
+
+  deb:
+    name: .deb (build, install, run)
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build
+        run: make deb
+      - name: Inspect
+        run: |
+          dpkg-deb --info dist/*.deb
+          dpkg-deb --contents dist/*.deb
+      - name: Install and run
+        run: |
+          sudo apt-get install -y -qq ./dist/*.deb
+          lightmount --version
+          lightmount --config /usr/share/lightmount/config.toml check
+          test -f /usr/lib/systemd/user/lightmount.service
+          test -f /usr/lib/udev/rules.d/70-bequiet-light-mount.rules
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: deb
+          path: dist/*.deb
+          if-no-files-found: error
+
+  arch:
+    name: Arch package (makepkg, install, run)
+    needs: test
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - name: Tools
+        run: pacman -Syu --noconfirm --needed git python util-linux namcap
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build from a source tarball shaped like the GitHub tag archive
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          version=$(sed -n "s/^__version__ = '\(.*\)'/\1/p" lightmount/__init__.py)
+          build=$(mktemp -d)
+          cp packaging/arch/PKGBUILD packaging/arch/lightmount.install "$build/"
+          git archive --prefix="keyboard_bequiet_lightmount_rgb-$version/" -o "$build/lightmount-$version.tar.gz" HEAD
+          useradd -m builder
+          chown -R builder "$build"
+          su builder -c "cd $build && makepkg --noconfirm"
+          namcap "$build"/*.pkg.tar.zst
+          pacman -U --noconfirm "$build"/*.pkg.tar.zst
+          lightmount --version
+          lightmount --config /usr/share/lightmount/config.toml check
+          mkdir -p dist && cp "$build"/*.pkg.tar.zst dist/
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: arch
+          path: dist/*.pkg.tar.zst
+          if-no-files-found: error

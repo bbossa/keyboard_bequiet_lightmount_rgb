@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+if [ "$1" = configure ]; then
+    if command -v udevadm >/dev/null; then
+        udevadm control --reload-rules || true
+        udevadm trigger --action=change --subsystem-match=hidraw || true
+    fi
+    echo 'lightmount: enable the daemon for your user (no sudo):'
+    echo '    systemctl --user enable --now lightmount.service'
+    echo '  Config example: /usr/share/lightmount/config.toml -> ~/.config/lightmount/config.toml'
+fi
+exit 0
