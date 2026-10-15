@@ -31,10 +31,18 @@ sudo install/install.sh --udev  # once: lets your session access the keyboard
 
 `install.sh` links `~/.local/bin/lightmount` to the checkout: keep the repository where it is. Running it again only updates what changed; an existing config is never replaced.
 
-### Arch Linux (PKGBUILD)
+### Arch Linux
+
+An AUR package is planned: it will be published once AUR account registration reopens. Until then, use the [latest release](https://github.com/bbossa/keyboard_bequiet_lightmount_rgb/releases/latest), either the ready-made package:
 
 ```sh
-cd packaging/arch
+sudo pacman -U lightmount-*-any.pkg.tar.zst
+systemctl --user enable --now lightmount.service
+```
+
+or its `PKGBUILD` (with the real checksum), built in a folder that holds only `PKGBUILD` and `lightmount.install`:
+
+```sh
 makepkg -si
 systemctl --user enable --now lightmount.service
 ```
