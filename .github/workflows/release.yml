@@ -56,7 +56,8 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           version=${TAG#v}
-          git archive --prefix="keyboard_bequiet_lightmount_rgb-$version/" -o "dist/lightmount-$version.tar.gz" HEAD
+          # "-source": must not share the PKGBUILD source name, or makepkg would pick it up from the same folder
+          git archive --prefix="keyboard_bequiet_lightmount_rgb-$version/" -o "dist/lightmount-$version-source.tar.gz" HEAD
           # The PKGBUILD downloads GitHub's own archive of the tag: checksum that one
           curl -fsSL --retry 3 -o tag.tar.gz "https://github.com/$REPO/archive/refs/tags/$TAG.tar.gz"
           sum=$(sha256sum tag.tar.gz | cut -d' ' -f1)
