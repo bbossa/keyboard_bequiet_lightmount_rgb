@@ -121,6 +121,8 @@ Only the exit status is used. Notifications are matched on their urgency only; t
 | `unknown version …, nothing written` | Untested version. Please open an issue with the `lightmount status` output; `allow_unknown_firmware = true` forces writing. |
 | `several Light Mount keyboards` | Set `usb_path` in `[device]` to one of the listed paths. |
 | Colors change by themselves | An open IO Center (web) tab reapplies its own settings: close it while lightmount runs. |
+| Colors gone or back to the factory effect after using IO Center | An IO Center session clears the custom colors or switches the keyboard to effects mode, which lightmount does not detect (so that a firmware effect can be chosen on purpose). Close the IO Center tab, then run `lightmount apply`. |
+| M1–M5 (or other remapped keys) back to their factory functions | Key assignments are stored in the keyboard; lightmount never changes them. Some IO Center sessions (for example in a Windows VM) restore the defaults: reassign the keys in IO Center, then close it and run `lightmount apply`. |
 | Win key does nothing | Game mode (Fn+Pause) disables it; press Fn+Pause again. |
 
 Logs: `journalctl --user -u lightmount`. Add `Environment=LIGHTMOUNT_DEBUG=1` to the service for debug messages.
