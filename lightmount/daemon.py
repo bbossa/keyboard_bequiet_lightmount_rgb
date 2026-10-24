@@ -1,8 +1,9 @@
 """Daemon: fixed zones + alerts on one zone.
 
 Custom mode (10:0d) does not survive a power cycle: the keyboard restarts in
-effects mode. The daemon therefore reapplies the zones at startup and on every
-replug, and colors the alert zone for a moment on a notification (D-Bus) or a
+effects mode. The daemon therefore reapplies the zones at startup, on every
+replug and on resume from suspend (the USB controller is reset: the keyboard
+stays plugged but loses its colors), and colors the alert zone for a moment on a notification (D-Bus) or a
 shell error (FIFO).
 
 Events are handled in batches: a burst of notifications is one write, an
@@ -21,9 +22,9 @@ FIFO = os.path.join(RUNTIME, 'lightmount.fifo')
 LOCK = os.path.join(RUNTIME, 'lightmount.lock')
 ALERTS = config.ALERTS
 PRIORITY = {'normal': 1, 'error': 2, 'critical': 3}
-# event -> delay before reapplying: let the keyboard initialize after a replug,
-# or finish switching effect (Fn+←/→ clears the custom colors, mode stays 03)
-REAPPLY = {'plug': 1.5, 'effect': 0.3, 'reapply': 0}
+# event -> delay before reapplying: let the keyboard initialize after a replug
+# or a resume, or finish switching effect (Fn+←/→ clears the custom colors, mode stays 03)
+REAPPLY = {'plug': 1.5, 'resume': 1.5, 'effect': 0.3, 'reapply': 0}
 KEYS_RETRY = 2  # seconds between attempts to open the keyboard for key events
 MIN_INTERVAL = 0.040  # between two updates
 RETRY_MIN, RETRY_MAX = 1, 60  # event source restart delay, doubled on each failure
@@ -91,6 +92,21 @@ def watch_plug(events):
             elif action == 'add' and line.startswith('DEVPATH=') and '373F:0002' in line.upper():
                 events.put('plug')
                 action = None
+
+
+def watch_sleep(events):
+    """Resume from suspend: logind's PrepareForSleep(false) on the system bus. No privilege needed."""
+    cmd = ['busctl', '--system', '--json=short', 'wait', 'org.freedesktop.login1', '/org/freedesktop/login1',
+           'org.freedesktop.login1.Manager', 'PrepareForSleep']
+    while True:  # `busctl wait` returns after one signal
+        out = subprocess.run(cmd, stdout=subprocess.PIPE, text=True, check=True).stdout
+        try:
+            going_to_sleep = json.loads(out)['data'][0]
+        except (json.JSONDecodeError, KeyError, IndexError, TypeError):
+            log.debug('sleep: unexpected output %r', out)
+            continue
+        if going_to_sleep is False:
+            events.put('resume')
 
 
 def is_fifo(path):
@@ -252,7 +268,7 @@ class Daemon:
             log.error('%s: %s: %s', what, type(e).__name__, e)
 
     def sources(self):
-        out = {'udev': watch_plug, 'fifo': watch_fifo}
+        out = {'udev': watch_plug, 'sleep': watch_sleep, 'fifo': watch_fifo}
         if self.cfg['alerts']['sources']['notifications']:
             out['notifications'] = watch_notifications
         if self.cfg['daemon']['reapply_on_effect_key']:

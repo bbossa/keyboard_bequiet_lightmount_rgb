@@ -3,7 +3,7 @@
 Lighting control for the **be quiet! Light Mount** keyboard (USB `373f:0002`) on Linux, without the vendor's IO Center.
 
 - **Fixed color zones**: top strip, knob, keys, left and right side strips, or your own zones down to single keys.
-- **Reapplied automatically** at login, when the keyboard is replugged, and after the Fn+←/→ effect keys (which clear the custom colors).
+- **Reapplied automatically** at login, when the keyboard is replugged, on resume from suspend, and after the Fn+←/→ effect keys (which clear the custom colors).
 - **Short alerts** on one zone: desktop notifications (green, red when critical) and failed shell commands (blue).
 - Runs as a **systemd user service**. No root needed once the udev rule is installed.
 

@@ -155,6 +155,18 @@ class Reapply(DaemonTest):
         self.assertEqual(self.writes[-1], daemon.zone_entries(defaults()))
         self.assertIsNone(d.alert)
 
+    def test_resume(self):
+        # back from suspend: the keyboard lost its colors but was not replugged, the config is kept
+        d = self.make(defaults(), self.config_file('[zones]\ntop = "nope"\n'))
+        d.handle(['normal'])
+        d.handle(['resume'])
+        self.assertEqual(self.clock.sleeps[-1], daemon.REAPPLY['resume'])
+        self.assertEqual(self.writes[-1], daemon.zone_entries(defaults()))
+        self.assertIsNone(d.alert)
+
+    def test_sleep_source(self):
+        self.assertIn('sleep', self.daemon.sources())
+
     def test_plug_and_effect_wait_longest(self):
         self.daemon.handle(['effect', 'plug'])
         self.assertEqual(self.clock.sleeps, [daemon.REAPPLY['plug']])
@@ -334,6 +346,30 @@ class Fifo(unittest.TestCase):
         os.write(fd, b'critical\nbogus\nnormal\n')
         os.close(fd)
         self.assertEqual([events.get(timeout=2), events.get(timeout=2)], ['critical', 'normal'])
+
+
+class WatchSleep(unittest.TestCase):
+    def run_source(self, outputs):
+        events = __import__('queue').Queue()
+        outputs = iter(outputs)
+
+        def run(cmd, **kwargs):
+            self.assertIn('PrepareForSleep', cmd)
+            out = next(outputs, None)
+            if out is None:
+                raise Stop
+            return mock.Mock(stdout=out)
+        with mock.patch.object(daemon.subprocess, 'run', run), self.assertRaises(Stop):
+            daemon.watch_sleep(events)
+        return [events.get_nowait() for _ in range(events.qsize())]
+
+    def test_resume_only(self):
+        self.assertEqual(self.run_source(['{"type":"b","data":[true]}\n', '{"type":"b","data":[false]}\n']),
+                         ['resume'])
+
+    def test_unexpected_output_ignored(self):
+        with self.assertLogs('lightmount', 'DEBUG'):
+            self.assertEqual(self.run_source(['', '{"type":"b","data":[]}\n']), [])
 
 
 class Poll(unittest.TestCase):
