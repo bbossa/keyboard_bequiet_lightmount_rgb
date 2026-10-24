@@ -1,3 +1,9 @@
+lightmount (0.1.1-1) unstable; urgency=medium
+
+  * Reapply the zones on resume from suspend (logind PrepareForSleep).
+
+ -- mithsuki <mithsuki@id.chabenj.fr>  Sat, 24 Oct 2026 22:02:26 +0200
+
 lightmount (0.1.0-1) unstable; urgency=medium
 
   * First release: zones, alerts, effect key reapply, check/apply/status.

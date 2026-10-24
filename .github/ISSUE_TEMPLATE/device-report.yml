@@ -20,7 +20,7 @@ body:
     id: version
     attributes:
       label: Output of `lightmount --version`
-      placeholder: lightmount 0.1.0
+      placeholder: lightmount 0.1.1
     validations:
       required: true
   - type: input
