@@ -1,7 +1,7 @@
 """lightmount: lighting for the be quiet! Light Mount keyboard (fixed zones + alerts)."""
 import argparse, logging, os, shutil, subprocess, sys
 
-from . import __version__, config, daemon, device, protocol
+from . import __version__, config, daemon, device, keymap, protocol
 
 MODES = {protocol.MODE_EFFECTS: 'effects (01): firmware effects, 10:0d ignored',
          protocol.MODE_CUSTOM: 'custom (03): per-LED colors'}
@@ -63,6 +63,36 @@ def alert(args):
     return 0
 
 
+CALIBRATE_ON, CALIBRATE_OFF = (0xff, 0xff, 0xff), (0, 0, 0)
+
+
+def calibrate(args, ask=input):
+    """Light the keys one by one so the user confirms keymap.py; the zones are reapplied at the end."""
+    cfg = load(args)
+    leds = {**keymap.KNOB, **keymap.KEYS}
+    todo = [i for i in sorted(leds) if i >= args.start]
+    print(f'{len(todo)} LEDs, one at a time: Enter = the lit key matches, '
+          'otherwise type what is lit (or "q" to stop).')
+    wrong = {}
+    try:
+        daemon.write(cfg, [(i, CALIBRATE_OFF) for i in leds])
+        previous = []
+        for i in todo:
+            daemon.write(cfg, previous + [(i, CALIBRATE_ON)])
+            previous = [(i, CALIBRATE_OFF)]
+            answer = ask(f'{i:02x}  {leds[i][0]}  ').strip()
+            if answer == 'q':
+                break
+            if answer:
+                wrong[i] = answer
+    finally:
+        daemon.apply(cfg)
+    for i, answer in wrong.items():
+        print(f'{i:02x}: expected {leds[i][0]!r}, lit: {answer!r}')
+    print(f'{len(wrong)} mismatch(es)')
+    return 1 if wrong else 0
+
+
 EXIT_CONFIG = 2  # the service does not restart on it (RestartPreventExitStatus)
 
 
@@ -109,6 +139,10 @@ def parser():
     p = sub.add_parser('alert', help='one-shot alert (through the daemon if it runs)')
     p.add_argument('kind', choices=config.ALERTS)
     p.set_defaults(run=alert)
+    p = sub.add_parser('calibrate', help='light the keys one by one to check the key map (ISO French)')
+    p.add_argument('--start', type=lambda s: int(s, 16), default=0, metavar='HEX',
+                   help='first LED index, e.g. 73 to resume')
+    p.set_defaults(run=calibrate)
     sub.add_parser('watch', help='daemon (systemd user service)').set_defaults(run=watch)
     return ap
 

@@ -68,6 +68,7 @@ lightmount check     # validate the config, without touching the keyboard
 lightmount apply     # apply the zones once
 lightmount status    # device, version, lighting mode, daemon state
 lightmount alert normal|critical|error   # test an alert
+lightmount calibrate # light the keys one by one to check the key map (ISO French layout)
 ```
 
 The service (`lightmount watch`) applies the zones at startup. After editing the config, run `lightmount check`, then `systemctl --user restart lightmount`.
