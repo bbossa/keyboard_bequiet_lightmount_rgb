@@ -201,6 +201,10 @@ def write(path, zones, alerts, backup=True):
             os.fsync(f.fileno())
         if text is not None:
             shutil.copymode(path, tmp)
+        else:  # mkstemp creates 0600: a new file gets the usual mode (umask)
+            umask = os.umask(0)
+            os.umask(umask)
+            os.chmod(tmp, 0o666 & ~umask)
         os.replace(tmp, path)
     except BaseException:
         os.unlink(tmp)

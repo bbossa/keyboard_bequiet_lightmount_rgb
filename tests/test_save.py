@@ -136,7 +136,10 @@ class Write(unittest.TestCase):
         os.chmod(self.path, mode)
 
     def test_new_file(self):
+        umask = os.umask(0o022)
+        self.addCleanup(os.umask, umask)
         save.write(self.path, self.zones, self.alerts)
+        self.assertEqual(stat.S_IMODE(os.stat(self.path).st_mode), 0o644)
         self.assertEqual(config.load(self.path)[0]['alerts']['zone'], 'top')
         self.assertFalse(os.path.exists(self.path + '.bak'))
 
