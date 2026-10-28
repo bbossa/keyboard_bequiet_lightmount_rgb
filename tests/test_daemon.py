@@ -5,7 +5,7 @@ from unittest import mock
 import fixtures  # noqa: F401  (sys.path)
 from lightmount import cli, config, daemon, device, layout, protocol
 
-GREEN, RED, BLUE = (0, 0xff, 0), (0xff, 0, 0), (0, 0, 0xff)
+GREEN, RED, ORANGE = (0, 0xff, 0), (0xff, 0, 0), (0xff, 0x2a, 0)
 TOP_COLOR = config.rgb('49412f')
 
 
@@ -87,7 +87,7 @@ class Alerts(DaemonTest):
 
     def test_batch_picks_highest(self):
         self.daemon.handle(['normal', 'error', 'normal'])
-        self.assertEqual(self.colors(self.writes[0]), {BLUE})
+        self.assertEqual(self.colors(self.writes[0]), {ORANGE})
 
     def test_shell_source_disabled(self):
         d = self.make(defaults(alerts={'sources': {'shell': False}}))
