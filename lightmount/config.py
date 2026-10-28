@@ -24,7 +24,7 @@ DEFAULTS = {
     'device': {'usb_path': '', 'allow_unknown_firmware': False},
     'daemon': {'poll_interval': 0, 'reapply_on_effect_key': True},
     'zones': {'top': '49412f', 'knob': 'ff2a00', 'keys': 'ff2a00', 'left': '0000ff', 'right': 'ff0000'},
-    'alerts': {'zone': 'top', 'duration': 1.25, 'normal': '00ff00', 'critical': 'ff0000', 'error': 'ff2a00',
+    'alerts': {'zone': 'top', 'duration': 1.25, 'normal': '00ff00', 'critical': 'ff0000', 'error': 'e66100',
                'sources': {'notifications': True, 'shell': True}},
 }
 

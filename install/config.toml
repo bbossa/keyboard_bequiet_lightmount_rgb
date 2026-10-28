@@ -61,7 +61,7 @@ zone = "top"         # any zone above, e.g. "knob" for a discreet alert
 duration = 1.25      # seconds
 normal = "00ff00"    # desktop notification
 critical = "ff0000"  # critical notification (urgency 2)
-error = "ff2a00"     # failed shell command (exit status not 0 or 130)
+error = "e66100"     # failed shell command (exit status not 0 or 130)
 
 [alerts.sources]
 notifications = true # D-Bus notifications (only the urgency is read, never the content)

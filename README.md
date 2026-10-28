@@ -4,7 +4,7 @@ Lighting control for the **be quiet! Light Mount** keyboard (USB `373f:0002`) on
 
 - **Fixed color zones**: top strip, knob, keys, left and right side strips, or your own zones down to single keys.
 - **Reapplied automatically** at login, when the keyboard is replugged, on resume from suspend, and after the Fn+←/→ effect keys (which clear the custom colors).
-- **Short alerts** on one zone: desktop notifications (green, red when critical) and failed shell commands (orange).
+- **Short alerts** on one zone: desktop notifications (green, red when critical) and failed shell commands (amber).
 - Runs as a **systemd user service**. No root needed once the udev rule is installed.
 
 Not affiliated with or endorsed by be quiet!. Use at your own risk; see [Safety](#safety).
@@ -93,7 +93,7 @@ zone = "top"          # or "knob" for a discreet alert
 duration = 1.25
 normal = "00ff00"
 critical = "ff0000"
-error = "ff2a00"
+error = "e66100"
 ```
 
 | LED indexes | Zone |
