@@ -66,12 +66,13 @@ After installing the udev rule, replug the keyboard (or log in again) so that yo
 ```sh
 lightmount check     # validate the config, without touching the keyboard
 lightmount apply     # apply the zones once
+lightmount reload    # have the service reread the config (validated first)
 lightmount status    # device, version, lighting mode, daemon state
 lightmount alert normal|critical|error   # test an alert
 lightmount calibrate # light the keys one by one to check the key map (ISO French layout)
 ```
 
-The service (`lightmount watch`) applies the zones at startup. After editing the config, run `lightmount check`, then `systemctl --user restart lightmount`.
+The service (`lightmount watch`) applies the zones at startup. After editing the config, run `lightmount reload` (or `systemctl --user reload lightmount`): the config is validated first, and an invalid one is refused, the service keeps the previous one. `[daemon]` and `alerts.sources.notifications` are only read at startup: changing them needs `systemctl --user restart lightmount`.
 
 ## Configuration
 

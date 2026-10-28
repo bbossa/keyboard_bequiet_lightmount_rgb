@@ -4,7 +4,7 @@ Custom mode (10:0d) does not survive a power cycle: the keyboard restarts in
 effects mode. The daemon therefore reapplies the zones at startup, on every
 replug and on resume from suspend (the USB controller is reset: the keyboard
 stays plugged but loses its colors), and colors the alert zone for a moment on a notification (D-Bus) or a
-shell error (FIFO).
+shell error (FIFO). `lightmount reload` (FIFO) rereads the config and reapplies.
 
 Events are handled in batches: a burst of notifications is one write, an
 active alert is extended rather than sent again, and a higher-priority alert
@@ -24,7 +24,9 @@ ALERTS = config.ALERTS
 PRIORITY = {'normal': 1, 'error': 2, 'critical': 3}
 # event -> delay before reapplying: let the keyboard initialize after a replug
 # or a resume, or finish switching effect (Fn+←/→ clears the custom colors, mode stays 03)
-REAPPLY = {'plug': 1.5, 'resume': 1.5, 'effect': 0.3, 'reapply': 0}
+REAPPLY = {'plug': 1.5, 'resume': 1.5, 'effect': 0.3, 'reapply': 0, 'reload': 0}
+RELOAD = ('plug', 'reload')  # events that reread the config file
+COMMANDS = ALERTS + ('reload',)  # lines accepted on the FIFO
 KEYS_RETRY = 2  # seconds between attempts to open the keyboard for key events
 MIN_INTERVAL = 0.040  # between two updates
 RETRY_MIN, RETRY_MAX = 1, 60  # event source restart delay, doubled on each failure
@@ -117,7 +119,7 @@ def is_fifo(path):
 
 
 def watch_fifo(events):
-    """Shell errors and manual alerts: `lightmount alert <kind>` or the shell hook write here."""
+    """Shell errors, manual alerts and reloads: `lightmount alert <kind>`, `lightmount reload` or the shell hook write here."""
     if not is_fifo(FIFO):
         if os.path.lexists(FIFO):
             log.warning('%s is not a FIFO, replacing it', FIFO)
@@ -126,7 +128,7 @@ def watch_fifo(events):
     fd = os.open(FIFO, os.O_RDWR)  # keep a writer open: read never sees EOF
     with os.fdopen(fd) as f:
         for line in f:
-            if line.strip() in ALERTS:
+            if line.strip() in COMMANDS:
                 events.put(line.strip())
 
 
@@ -211,15 +213,25 @@ class Daemon:
 
     def reapply(self, events):
         self.sleep(max(REAPPLY[e] for e in events))
-        if 'plug' in events:
-            try:
-                self.cfg, warnings = config.load(self.path)
-                for w in warnings:
-                    log.warning('%s', w)
-            except config.ConfigError as e:
-                log.error('config not reloaded, keeping the previous one:\n%s', e)
+        if any(e in RELOAD for e in events):
+            self.reload()
         self.alert = self.restore_at = None
         self.send(zone_entries(self.cfg))
+
+    def reload(self):
+        try:
+            cfg, warnings = config.load(self.path)
+        except config.ConfigError as e:
+            log.error('config not reloaded, keeping the previous one:\n%s', e)
+            return
+        for w in warnings:
+            log.warning('%s', w)
+        # the event sources are started once: these settings need a restart
+        if (cfg['daemon'] != self.cfg['daemon']
+                or cfg['alerts']['sources']['notifications'] != self.cfg['alerts']['sources']['notifications']):
+            log.warning('[daemon] or alerts.sources.notifications changed: '
+                        'restart the service to apply them (systemctl --user restart lightmount)')
+        self.cfg = cfg
 
     def handle(self, batch):
         """Handle a batch of events received together."""
@@ -292,20 +304,39 @@ def watch(path=config.CONFIG):
     Daemon(cfg, path).run()
 
 
+def tell(command):
+    """Write a command to the daemon's FIFO. False if no daemon reads it."""
+    if not is_fifo(FIFO):
+        return False
+    try:
+        fd = os.open(FIFO, os.O_WRONLY | os.O_NONBLOCK)
+    except OSError as e:
+        if e.errno != errno.ENXIO:  # ENXIO: stale FIFO, no daemon reading it
+            raise
+        return False
+    try:
+        os.write(fd, f'{command}\n'.encode())
+    finally:
+        os.close(fd)
+    return True
+
+
+def reload(path=config.CONFIG):
+    """Validate the config, then have the daemon reread it. Without a daemon, apply it once.
+
+    True if the daemon was told. The config is checked first so that errors show up here,
+    not only in the daemon's log (it would keep its previous config)."""
+    cfg, _ = config.load(path)
+    if tell('reload'):
+        return True
+    apply(cfg)
+    return False
+
+
 def alert(kind, path=config.CONFIG):
     """Through the daemon's FIFO if it runs, otherwise standalone."""
-    if is_fifo(FIFO):
-        try:
-            fd = os.open(FIFO, os.O_WRONLY | os.O_NONBLOCK)
-        except OSError as e:
-            if e.errno != errno.ENXIO:  # ENXIO: stale FIFO, no daemon reading it
-                raise
-        else:
-            try:
-                os.write(fd, f'{kind}\n'.encode())
-            finally:
-                os.close(fd)
-            return
+    if tell(kind):
+        return
     cfg, _ = config.load(path)
 
     def interrupted(signum, frame):

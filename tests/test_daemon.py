@@ -172,6 +172,35 @@ class Reapply(DaemonTest):
         self.assertEqual(self.clock.sleeps, [daemon.REAPPLY['plug']])
         self.assertEqual(len(self.writes), 1)
 
+    def test_reload_rereads_and_applies(self):
+        d = self.make(defaults(), self.config_file('[zones]\ntop = "ffffff"\nknob = "000000"\n'))
+        d.handle(['normal'])
+        with self.assertLogs('lightmount', 'WARNING'):  # LEDs in no zone
+            d.handle(['reload'])
+        self.assertNotIn(daemon.REAPPLY['plug'], self.clock.sleeps)  # no replug: no settle delay
+        self.assertEqual(self.colors(self.writes[-1]), {(0xff, 0xff, 0xff), (0, 0, 0)})
+        self.assertIsNone(d.alert)
+
+    def test_reload_keeps_previous_config_if_invalid(self):
+        d = self.make(defaults(), self.config_file('[zones]\ntop = "nope"\n'))
+        with self.assertLogs('lightmount', 'ERROR') as logs:
+            d.handle(['reload'])
+        self.assertIn('keeping the previous one', logs.output[0])
+        self.assertEqual(self.writes[-1], daemon.zone_entries(defaults()))
+
+    def test_reload_warns_about_startup_settings(self):
+        d = self.make(defaults(), self.config_file('[daemon]\npoll_interval = 5\n'))
+        with self.assertLogs('lightmount', 'WARNING') as logs:
+            d.handle(['reload'])
+        self.assertIn('restart the service', logs.output[-1])
+        self.assertEqual(d.cfg['daemon']['poll_interval'], 5)
+
+    def test_reload_silent_when_startup_settings_unchanged(self):
+        d = self.make(defaults(), self.config_file('[alerts]\nnormal = "ffffff"\n'))
+        with self.assertNoLogs('lightmount', 'WARNING'):
+            d.handle(['reload'])
+        self.assertEqual(d.cfg['alerts']['colors']['normal'], (0xff, 0xff, 0xff))
+
     def test_plug_and_alert_in_one_batch(self):
         self.daemon.handle(['plug', 'normal'])
         self.assertEqual(len(self.writes), 2)
@@ -336,6 +365,29 @@ class Fifo(unittest.TestCase):
                     raise
             time.sleep(0.005)
 
+    def test_reload_through_daemon(self):
+        os.mkfifo(self.fifo, 0o600)
+        reader = os.open(self.fifo, os.O_RDONLY | os.O_NONBLOCK)
+        self.addCleanup(os.close, reader)
+        self.assertTrue(daemon.reload('/nonexistent.toml'))
+        self.assertEqual(os.read(reader, 64), b'reload\n')
+        self.assertEqual(self.writes, [])
+
+    def test_reload_standalone_applies(self):
+        self.assertFalse(daemon.reload('/nonexistent.toml'))
+        self.assertEqual(self.writes, [daemon.zone_entries(config.validate({})[0])])
+
+    def test_reload_refuses_invalid_config(self):
+        os.mkfifo(self.fifo, 0o600)
+        reader = os.open(self.fifo, os.O_RDONLY | os.O_NONBLOCK)
+        self.addCleanup(os.close, reader)
+        path = os.path.join(self.dir, 'config.toml')
+        with open(path, 'w') as f:
+            f.write('[zones]\ntop = "nope"\n')
+        with self.assertRaises(config.ConfigError):
+            daemon.reload(path)
+        self.assertEqual(os.read(reader, 64), b'')  # nothing sent to the daemon (no writer: EOF)
+
     def test_watch_replaces_regular_file(self):
         with open(self.fifo, 'w'):
             pass
@@ -343,9 +395,9 @@ class Fifo(unittest.TestCase):
         with self.assertLogs('lightmount', 'WARNING'):
             threading.Thread(target=daemon.watch_fifo, args=(events,), daemon=True).start()
             fd = self.open_when_read()
-        os.write(fd, b'critical\nbogus\nnormal\n')
+        os.write(fd, b'critical\nbogus\nnormal\nreload\n')
         os.close(fd)
-        self.assertEqual([events.get(timeout=2), events.get(timeout=2)], ['critical', 'normal'])
+        self.assertEqual([events.get(timeout=2) for _ in range(3)], ['critical', 'normal', 'reload'])
 
 
 class WatchSleep(unittest.TestCase):

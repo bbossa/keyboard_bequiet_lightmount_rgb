@@ -5,6 +5,8 @@ After=graphical-session.target
 
 [Service]
 ExecStart=%h/.local/bin/lightmount watch
+# systemctl --user reload lightmount: reread the config (validated first)
+ExecReload=%h/.local/bin/lightmount reload
 ExecStopPost=/usr/bin/rm -f %t/lightmount.fifo
 Restart=on-failure
 RestartSec=5

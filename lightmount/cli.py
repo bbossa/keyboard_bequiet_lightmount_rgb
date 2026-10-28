@@ -34,6 +34,14 @@ def apply(args):
     return 0
 
 
+def reload(args):
+    if daemon.reload(args.config):
+        print('daemon told to reload the config')
+    else:
+        print('daemon not running: zones applied once')
+    return 0
+
+
 def status(args):
     try:
         cfg = load(args)
@@ -135,6 +143,7 @@ def parser():
     sub = ap.add_subparsers(dest='command', required=True, metavar='command')
     sub.add_parser('check', help='validate the config, without touching the keyboard').set_defaults(run=check)
     sub.add_parser('apply', help='apply the zones of the config once').set_defaults(run=apply)
+    sub.add_parser('reload', help='have the daemon reread the config (validated first)').set_defaults(run=reload)
     sub.add_parser('status', help='device, version, lighting mode, daemon state').set_defaults(run=status)
     p = sub.add_parser('alert', help='one-shot alert (through the daemon if it runs)')
     p.add_argument('kind', choices=config.ALERTS)
