@@ -79,7 +79,7 @@ class KeyboardView(Gtk.DrawingArea):
                 cr.set_source_rgb(*(c / 255 for c in rgb))
             cr.fill()
             if shape.index in self.selection or shape.index in self.highlight:
-                self.outline(cr, shape, fg, selected=shape.index in self.selection)
+                self.outline(cr, shape, fg, scale, selected=shape.index in self.selection)
             if shape.kind != 'strip':
                 self.legend(cr, shape, rgb, fg, scale)
         if self.band:
@@ -91,16 +91,16 @@ class KeyboardView(Gtk.DrawingArea):
             cr.set_line_width(1 / scale)
             cr.stroke()
 
-    def outline(self, cr, shape, fg, selected):
+    def outline(self, cr, shape, fg, scale, selected):
         outline_path(cr, shape)
         if selected:
             cr.set_source_rgba(fg.red, fg.green, fg.blue, 1)
             cr.set_line_width(0.09)
             cr.set_dash([])
-        else:
-            cr.set_source_rgba(fg.red, fg.green, fg.blue, 0.8)
-            cr.set_line_width(0.045)
-            cr.set_dash([0.12, 0.08])
+        else:  # zone being edited: thin dotted line, in pixels so it stays fine on the strip segments
+            cr.set_source_rgba(fg.red, fg.green, fg.blue, 0.7)
+            cr.set_line_width(1 / scale)
+            cr.set_dash([2 / scale, 2 / scale])
         cr.stroke()
         cr.set_dash([])
 
