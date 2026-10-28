@@ -333,6 +333,18 @@ def reload(path=config.CONFIG):
     return False
 
 
+def preview(raw):
+    """Show the zones of an unsaved config (raw TOML content) on the keyboard; the file is not touched.
+
+    Written under the shared lock, between two daemon updates. An alert only restores its own
+    zone, the rest of the preview stays until `reload` (saved) or `apply` (abandoned)."""
+    cfg, errors, warnings = config.validate(raw)
+    if errors:
+        raise config.ConfigError(errors)
+    write(cfg, zone_entries(cfg))
+    return warnings
+
+
 def alert(kind, path=config.CONFIG):
     """Through the daemon's FIFO if it runs, otherwise standalone."""
     if tell(kind):

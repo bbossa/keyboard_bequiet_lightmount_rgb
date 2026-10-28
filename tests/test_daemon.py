@@ -388,6 +388,16 @@ class Fifo(unittest.TestCase):
             daemon.reload(path)
         self.assertEqual(os.read(reader, 64), b'')  # nothing sent to the daemon (no writer: EOF)
 
+    def test_preview_writes_without_saving(self):
+        warnings = daemon.preview({'zones': {'top': 'ffffff'}})
+        self.assertEqual(self.writes, [[(i, (0xff, 0xff, 0xff)) for i in layout.TOP]])
+        self.assertTrue(any('LEDs in no zone' in w for w in warnings))
+
+    def test_preview_refuses_invalid(self):
+        with self.assertRaises(config.ConfigError):
+            daemon.preview({'zones': {'top': 'nope'}})
+        self.assertEqual(self.writes, [])
+
     def test_watch_replaces_regular_file(self):
         with open(self.fifo, 'w'):
             pass
