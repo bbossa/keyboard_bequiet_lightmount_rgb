@@ -43,6 +43,7 @@ install:
 	install -Dm644 install/lightmount.zsh $(DESTDIR)$(SHAREDIR)/lightmount.zsh
 	install -Dm644 install/config.toml $(DESTDIR)$(SHAREDIR)/config.toml
 	install -Dm644 README.md $(DESTDIR)$(PREFIX)/share/doc/lightmount/README.md
+	install -Dm644 CHANGELOG.md $(DESTDIR)$(PREFIX)/share/doc/lightmount/CHANGELOG.md
 
 # Source tarball of the committed tree (what the PKGBUILD downloads)
 dist:

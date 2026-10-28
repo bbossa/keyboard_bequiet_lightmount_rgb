@@ -25,6 +25,13 @@ jobs:
           pkgver=$(sed -n 's/^pkgver=//p' packaging/arch/PKGBUILD)
           echo "tag $TAG, code $version, PKGBUILD $pkgver"
           test "$TAG" = "v$version" && test "$pkgver" = "$version"
+      - name: CHANGELOG.md has a section for this version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          packaging/changelog-notes.sh "${TAG#v}" > notes.md
+          cat notes.md
+          grep -q '[^[:space:]]' notes.md
 
   ci:
     needs: version
@@ -70,4 +77,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
-        run: gh release create "$TAG" dist/* --verify-tag --title "lightmount ${TAG#v}" --generate-notes
+        run: |
+          packaging/changelog-notes.sh "${TAG#v}" > "$RUNNER_TEMP/notes.md"
+          gh release create "$TAG" dist/* --verify-tag --title "lightmount ${TAG#v}" --notes-file "$RUNNER_TEMP/notes.md"
