@@ -80,7 +80,7 @@ class KeyboardView(Gtk.DrawingArea):
             cr.fill()
             if shape.index in self.selection or shape.index in self.highlight:
                 self.outline(cr, shape, fg, selected=shape.index in self.selection)
-            if len(shape.legend) <= 8 and shape.rects[0][3] >= 1:  # keys only, not the strip segments
+            if shape.kind != 'strip':
                 self.legend(cr, shape, rgb, fg, scale)
         if self.band:
             x0, y0, x1, y1 = self.band
@@ -191,7 +191,17 @@ class KeyboardView(Gtk.DrawingArea):
 
 
 def outline_path(cr, shape, d=0.05):
-    """One rounded rectangle, or the L of the ISO Enter (wide top, narrower bottom, right edges aligned)."""
+    """Knob: a circle. Strip segment: a slightly rounded bar. Key: a rounded rectangle,
+    or the L of the ISO Enter (wide top, narrower bottom, right edges aligned)."""
+    if shape.kind == 'knob':
+        x, y, w, h = shape.rects[0]
+        cr.new_sub_path()
+        cr.arc(x + w / 2, y + h / 2, min(w, h) / 2 - d, 0, 2 * math.pi)
+        cr.close_path()
+        return
+    if shape.kind == 'strip':
+        rounded(cr, *shape.rects[0], r=0.05)
+        return
     if len(shape.rects) == 1:
         rounded(cr, *inset(shape.rects[0], d))
         return

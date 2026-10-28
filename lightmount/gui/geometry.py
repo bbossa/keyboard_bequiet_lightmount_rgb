@@ -31,11 +31,14 @@ ROWS = [
 ]
 
 
-class Shape:
-    """A key or a strip segment: one or two rectangles (x, y, w, h)."""
+KEY, KNOB, SEGMENT = 'key', 'knob', 'strip'  # Shape.kind
 
-    def __init__(self, index, legend, rects):
-        self.index, self.legend, self.rects = index, legend, rects
+
+class Shape:
+    """A key, the knob or a strip segment: one or two rectangles (x, y, w, h)."""
+
+    def __init__(self, index, legend, rects, kind=KEY):
+        self.index, self.legend, self.rects, self.kind = index, legend, rects, kind
 
     def contains(self, x, y):
         return any(rx <= x <= rx + rw and ry <= y <= ry + rh for rx, ry, rw, rh in self.rects)
@@ -82,7 +85,7 @@ def keys():
             else:
                 rects = [(x, y, token, 1)]
                 x += token
-            shapes.append(Shape(i, legends[i], rects))
+            shapes.append(Shape(i, legends[i], rects, KNOB if i in keymap.KNOB else KEY))
         if next(leds, None) is not None:
             raise ValueError(f'row at y={y}: more LEDs than keys')
     return shapes
@@ -94,12 +97,12 @@ def strips():
     top = list(layout.TOP)
     step = WIDTH / len(top)
     for n, i in enumerate(top):
-        shapes.append(Shape(i, keymap.TOP[i][0], [(n * step + 0.04, -STRIP_GAP - STRIP, step - 0.08, STRIP)]))
+        shapes.append(Shape(i, keymap.TOP[i][0], [(n * step + 0.02, -STRIP_GAP - STRIP, step - 0.04, STRIP)], SEGMENT))
     for leds, x in ((layout.LEFT, -STRIP_GAP - STRIP), (layout.RIGHT, WIDTH + STRIP_GAP)):
         leds = list(leds)
         step = HEIGHT / len(leds)
         for n, i in enumerate(leds):
-            shapes.append(Shape(i, keymap.ALL[i][0], [(x, n * step + 0.06, STRIP, step - 0.12)]))
+            shapes.append(Shape(i, keymap.ALL[i][0], [(x, n * step + 0.02, STRIP, step - 0.04)], SEGMENT))
     return shapes
 
 
