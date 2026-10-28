@@ -1,3 +1,16 @@
+lightmount (0.2.0-1) unstable; urgency=medium
+
+  * `lightmount reload` (also `systemctl --user reload lightmount`): the
+    service rereads the config, validated first; an invalid one is refused.
+  * `lightmount calibrate`: ISO French key map, checked key by key.
+  * The config can be written back (lightmount/save.py): only [zones] and
+    [alerts] are replaced, comments are kept, atomic write with a .bak.
+  * Preview of unsaved zones on the keyboard.
+  * Graphical editor (GTK4), preview: run from a checkout, not packaged yet.
+  * Failed-command alert: amber (e66100) by default instead of blue.
+
+ -- mithsuki <mithsuki@id.chabenj.fr>  Wed, 28 Oct 2026 21:50:18 +0100
+
 lightmount (0.1.1-1) unstable; urgency=medium
 
   * Reapply the zones on resume from suspend (logind PrepareForSleep).

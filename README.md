@@ -74,6 +74,16 @@ lightmount calibrate # light the keys one by one to check the key map (ISO Frenc
 
 The service (`lightmount watch`) applies the zones at startup. After editing the config, run `lightmount reload` (or `systemctl --user reload lightmount`): the config is validated first, and an invalid one is refused, the service keeps the previous one. `[daemon]` and `alerts.sources.notifications` are only read at startup: changing them needs `systemctl --user restart lightmount`.
 
+## Graphical editor (preview)
+
+A GTK4 editor draws the keyboard (ISO French layout) and edits the zones and alerts: select keys with the mouse, create or change zones, pick colors, preview them live on the keyboard, then save (the config is rewritten keeping its comments, the previous file is kept as `config.toml.bak`, and the service rereads it).
+
+Not packaged yet: run it from a checkout, with PyGObject and GTK 4 installed (Arch: `python-gobject gtk4`, Debian/Ubuntu: `python3-gi gir1.2-gtk-4.0`, Fedora: `python3-gobject gtk4`):
+
+```sh
+python3 -m lightmount.gui            # LIGHTMOUNT_LANG=fr for French
+```
+
 ## Configuration
 
 `~/.config/lightmount/config.toml`. The fully commented example is [`install/config.toml`](install/config.toml) (`/usr/share/lightmount/config.toml` with a package). Without a config file, built-in defaults are used.
@@ -156,7 +166,7 @@ The keyboard keeps its last colors until it is unplugged, then restarts with its
 make check      # unit tests, no keyboard needed (plus capture checks when captures/ is present)
 ```
 
-`lightmount/` is the package (`protocol.py` has no I/O and documents the frame format); `bin/lightmount` runs it from a checkout. The tests use reference frames extracted from captures of the vendor software (`tests/fixtures/`).
+`lightmount/` is the package (`protocol.py` has no I/O and documents the frame format); `bin/lightmount` runs it from a checkout. `lightmount/gui/` is the optional GTK4 editor: `geometry.py` and `model.py` do not import GTK and are tested with the core. The tests use reference frames extracted from captures of the vendor software (`tests/fixtures/`).
 
 ## License
 

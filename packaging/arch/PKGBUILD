@@ -1,6 +1,6 @@
 # Maintainer: mithsuki <mithsuki@id.chabenj.fr>
 pkgname=lightmount
-pkgver=0.1.1
+pkgver=0.2.0
 pkgrel=1
 pkgdesc='Lighting control for the be quiet! Light Mount keyboard (zones, alerts) without IO Center'
 arch=('any')
