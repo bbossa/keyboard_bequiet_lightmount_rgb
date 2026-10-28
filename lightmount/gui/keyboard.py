@@ -25,7 +25,7 @@ class KeyboardView(Gtk.DrawingArea):
         self.model = model
         self.shapes = geometry.shapes()
         self.selection = set()
-        self.highlight = set()   # LEDs of the zone being edited: dashed outline
+        self.focus = None        # zone shown alone in color (the zone being edited); None: all zones
         self.band = None         # rubber band, in key units: (x0, y0, x1, y1)
         self.set_draw_func(self.draw)
         self.set_has_tooltip(True)
@@ -67,6 +67,9 @@ class KeyboardView(Gtk.DrawingArea):
         scale, ox, oy = self.transform()
         fg = self.get_color()
         colors = self.model.colors()
+        if self.focus is not None:  # the other zones are drawn as LEDs in no zone
+            leds = self.model.zones[self.focus].leds if self.focus in self.model.zones else set()
+            colors = {i: c for i, c in colors.items() if i in leds}
         cr.translate(ox, oy)
         cr.scale(scale, scale)
         cr.set_line_join(1)  # round
@@ -78,8 +81,8 @@ class KeyboardView(Gtk.DrawingArea):
             else:
                 cr.set_source_rgb(*(c / 255 for c in rgb))
             cr.fill()
-            if shape.index in self.selection or shape.index in self.highlight:
-                self.outline(cr, shape, fg, scale, selected=shape.index in self.selection)
+            if shape.index in self.selection:
+                self.outline(cr, shape, fg)
             if shape.kind != 'strip':
                 self.legend(cr, shape, rgb, fg, scale)
         if self.band:
@@ -91,18 +94,11 @@ class KeyboardView(Gtk.DrawingArea):
             cr.set_line_width(1 / scale)
             cr.stroke()
 
-    def outline(self, cr, shape, fg, scale, selected):
+    def outline(self, cr, shape, fg):
         outline_path(cr, shape)
-        if selected:
-            cr.set_source_rgba(fg.red, fg.green, fg.blue, 1)
-            cr.set_line_width(0.09)
-            cr.set_dash([])
-        else:  # zone being edited: thin dotted line, in pixels so it stays fine on the strip segments
-            cr.set_source_rgba(fg.red, fg.green, fg.blue, 0.7)
-            cr.set_line_width(1 / scale)
-            cr.set_dash([2 / scale, 2 / scale])
+        cr.set_source_rgba(fg.red, fg.green, fg.blue, 1)
+        cr.set_line_width(0.09)
         cr.stroke()
-        cr.set_dash([])
 
     def legend(self, cr, shape, rgb, fg, scale):
         """Drawn in pixels: Pango metrics are hinted, a font of a fraction of a unit gets wrong line heights."""

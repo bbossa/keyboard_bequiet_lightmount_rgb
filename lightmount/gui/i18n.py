@@ -56,6 +56,8 @@ FR = {
     'Discard': 'Abandonner',
     'Zone {name}': 'Zone {name}',
     'no zone': 'aucune zone',
+    'Edited zone only': 'Zone éditée seule',
+    'Off: every zone in its color, as on the keyboard': 'Désactivé : chaque zone dans sa couleur, comme sur le clavier',
 }
 
 

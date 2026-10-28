@@ -82,8 +82,15 @@ class Window(Gtk.ApplicationWindow):
             'Click a key, drag to select several, Ctrl+click to add or remove, double-click to select its zone.'))
         hint.add_css_class('dim-label')
         main.append(hint)
-        self.selection_label = Gtk.Label(xalign=0)
-        main.append(self.selection_label)
+        row = Gtk.Box(spacing=8)
+        self.selection_label = Gtk.Label(xalign=0, hexpand=True)
+        row.append(self.selection_label)
+        row.append(Gtk.Label(label=_('Edited zone only')))
+        self.focus_switch = Gtk.Switch(active=True, valign=Gtk.Align.CENTER,
+                                       tooltip_text=_('Off: every zone in its color, as on the keyboard'))
+        self.focus_switch.connect('notify::active', lambda s, p: self.refresh_editor())
+        row.append(self.focus_switch)
+        main.append(row)
         main.append(Gtk.Separator())
         # zones, zone, alerts side by side; on a narrow window they wrap below each other
         panels = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE, homogeneous=False,
@@ -248,7 +255,8 @@ class Window(Gtk.ApplicationWindow):
     def refresh_editor(self):
         zone = self.model.zones.get(self.zone)
         self.zone_form.set_sensitive(zone is not None)
-        self.view.highlight = set(zone.leds) if zone else set()
+        self.view.focus = self.zone if self.focus_switch.get_active() else None
+        self.view.queue_draw()
         if zone is None:
             return
         self.updating = True
