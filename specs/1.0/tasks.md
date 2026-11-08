@@ -8,11 +8,12 @@ Order: decisions first (they unblock code), then packaging, then editor, then VM
 - [x] ADR-0008 accepted 2026-11-08 (portable sh script)
 
 ## 1. Daemon (R-010 to R-013)
-- [ ] Daemon writes version at startup (R-010)
-- [ ] `status` and editor compare versions and warn (R-011)
-- [ ] `reload` result readable by the sender (R-012)
+- [ ] `daemon.py`: write the state file atomically at startup, after each reload, remove on SIGTERM (R-010, R-012)
+- [ ] Reader helper (valid / stale / unknown) shared by CLI and editor (R-015)
+- [ ] `status` and editor compare versions and warn, including the "no file but service active" case (R-011)
+- [ ] `lightmount reload` waits for `reload.seq` to increase and reports the result; exit 1 on refusal or timeout (R-012, ADR-0009)
 - [ ] Document the ephemeral preview in README and editor (R-013)
-- [ ] Tests citing R-010 to R-012
+- [ ] Tests citing R-010 to R-012, R-015 (atomic write, stale pid, unknown format, refused reload, timeout)
 
 ## 2. Packaging (R-020 to R-026)
 - [ ] `make install-gui`: modules, launcher, `.desktop`, icon, metainfo (R-020)
@@ -30,7 +31,8 @@ Order: decisions first (they unblock code), then packaging, then editor, then VM
 - [ ] Short zone form kept on save (R-005)
 - [ ] "Help wanted" issue for other layouts (R-046)
 
-## 4. Stability and docs (R-001, R-002, R-006, R-050, R-051)
+## 4. Stability and docs
+- [ ] List every 0.x behaviour change under Changed/Removed in the 1.0.0 changelog (ADR-0009) (R-001, R-002, R-006, R-050, R-051)
 - [ ] README: config and CLI declared stable (R-006)
 - [ ] Review config keys and CLI exit codes before freezing (R-001, R-002)
 

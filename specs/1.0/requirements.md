@@ -27,6 +27,7 @@ Source: `PLAN-1.0.md` and `PLAN-GUI.md` (private notes), `README.md`, `CHANGELOG
 | R-012 | When the daemon handles `reload`, it shall make available whether the new config was applied or refused, and why. | M | todo |
 | R-013 | The README and the editor shall state that a preview is ephemeral: when the daemon reapplies the saved zones (resume, replug, effect key), the preview is cleared (ADR-0007). | S | todo |
 | R-014 | The daemon shall keep writing to the keyboard under the shared lock, as the CLI and the editor do. | M | done |
+| R-015 | If the state file is missing, unreadable, of an unknown format or left by a dead process, then `status` and the editor shall treat the daemon version as unknown and shall not fail. | M | todo |
 
 ## 3. Packaging
 
