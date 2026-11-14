@@ -1,3 +1,11 @@
+lightmount (0.3.0-1) unstable; urgency=medium
+
+  * ANSI US key map (experimental): [device] layout = "ansi-us" in the
+    config, lightmount calibrate --layout ansi-us; the editor draws the ANSI
+    keyboard. LED 62 (backslash key) awaits a test on a keyboard.
+
+ -- mithsuki <mithsuki@id.chabenj.fr>  Sat, 14 Nov 2026 22:18:59 +0100
+
 lightmount (0.2.0-1) unstable; urgency=medium
 
   * `lightmount reload` (also `systemctl --user reload lightmount`): the

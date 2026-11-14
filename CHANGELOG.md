@@ -6,6 +6,8 @@ The section of a version is used as the notes of its GitHub release.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-14
+
 ### Added
 
 - ANSI US key map (experimental), from the `calibrate` report of the first ANSI owner (issue #1): `[device] layout = "ansi-us"` in the config (default `iso-fr`) and `lightmount calibrate --layout ansi-us`. ANSI has the backslash key (LED `62`, awaiting a test on a keyboard) and no `77` and `7e`; the predefined `keys` zone follows the layout, and the editor draws the ANSI keyboard.
@@ -46,7 +48,8 @@ First release.
 - Commands: `check`, `apply`, `status`, `alert`, `watch`.
 - Arch package and `.deb`, udev rule for access without root.
 
-[Unreleased]: https://github.com/bbossa/keyboard_bequiet_lightmount_rgb/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/bbossa/keyboard_bequiet_lightmount_rgb/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/bbossa/keyboard_bequiet_lightmount_rgb/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/bbossa/keyboard_bequiet_lightmount_rgb/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/bbossa/keyboard_bequiet_lightmount_rgb/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/bbossa/keyboard_bequiet_lightmount_rgb/releases/tag/v0.1.0
