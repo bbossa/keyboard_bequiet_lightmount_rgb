@@ -62,7 +62,8 @@ Source: `PLAN-1.0.md` and `PLAN-GUI.md` (private notes), `README.md`, `CHANGELOG
 | R-043 | While a zone is edited, the editor shall show that zone alone in color on the drawn keyboard. | M | done |
 | R-044 | When the keyboard is absent or `hidraw` access is denied, the editor shall display a banner explaining it. | M | done |
 | R-045 | The editor shall support the ISO French layout; other layouts are added only after verification by someone owning that layout. | M | done |
-| R-046 | The project shall offer a "help wanted" issue for other layouts (ISO DE/UK, ANSI). | S | todo |
+| R-046 | The project shall offer a "help wanted" issue for other layouts (ISO DE/UK, ANSI). | S | done |
+| R-048 | Where `[device] layout` is `ansi-us`, the key map, the predefined `keys` zone and the editor shall follow the ANSI US layout (experimental until verified on a keyboard). | S | done |
 | R-047 | The editor shall display its texts in French and English. | M | done |
 
 ## 6. Project hygiene

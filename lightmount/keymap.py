@@ -1,5 +1,8 @@
 """Key legend and position of each vendor LED index (10:0d), ISO French (AZERTY) layout.
 
+KEYS is the ISO French map; ANSI_US_KEYS (ANSI US, QWERTY) is derived from it below and
+`keys(name)` / `all_leds(name)` give the map of a layout by its name (layout.NAMES).
+
 Keys: LampArray positions (interface 3, LampAttributesResponse, lamps-map.tsv) matched
 row by row, left to right, with the vendor indexes 2e-9d (numbered the same way).
 0x62 is the ANSI backslash slot (no LED), 0x89 is never written by IO Center.
@@ -138,3 +141,27 @@ LEFT = {i: (f'Left strip {n + 1}', -6.0, 30.0 + n * 20.0) for n, i in enumerate(
 RIGHT = {i: (f'Right strip {n + 1}', 446.0, 30.0 + n * 20.0) for n, i in enumerate(layout.RIGHT)}
 
 ALL = {**TOP, **KNOB, **KEYS, **LEFT, **RIGHT}
+
+# ANSI US: same numbering, same key centers except the three keys of the ISO block
+# (77, 7e removed, 62 added: the backslash key at the end of the QWERTY row).
+# Legends from `lightmount calibrate` run on an ANSI US keyboard (issue #1: 29 differences
+# with ISO French, 27 relabeled keys and 2 absent ones). Not verified on a keyboard: LED 62 (found missing by the
+# reporter, who saw no LED for the backslash key) and the key sizes in gui/geometry.py.
+ANSI_US_LEGENDS = {
+    0x3f: '` ~', 0x40: '1 !', 0x41: '2 @', 0x42: '3 #', 0x43: '4 $', 0x44: '5 %', 0x45: '6 ^',
+    0x46: '7 &', 0x47: '8 *', 0x48: '9 (', 0x49: '0 )', 0x4a: '- _', 0x4b: '= +',
+    0x56: 'Q', 0x57: 'W', 0x58: 'E', 0x60: '{ [', 0x61: '} ]',
+    0x6c: 'A', 0x75: '; :', 0x76: '\' "',
+    0x7f: 'Z', 0x85: 'M', 0x86: ', <', 0x87: '. >', 0x88: '/ ?', 0x9d: '.',
+}
+ANSI_US_KEYS = {i: (ANSI_US_LEGENDS.get(i, key[0]), key[1], key[2])
+                for i, key in KEYS.items() if i not in (0x77, 0x7e)}
+ANSI_US_KEYS[0x62] = ('\\ |', 280.2, 61.7)
+
+
+def keys(name=layout.DEFAULT):
+    return {layout.ISO_FR: KEYS, layout.ANSI_US: ANSI_US_KEYS}[name]
+
+
+def all_leds(name=layout.DEFAULT):
+    return {**TOP, **KNOB, **keys(name), **LEFT, **RIGHT}

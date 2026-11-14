@@ -15,6 +15,11 @@
 # read-only (warning in the log) unless this is set to true.
 allow_unknown_firmware = false
 
+# Key layout: "iso-fr" (default) or "ansi-us" (experimental, awaiting a test on a
+# keyboard). It changes the keys that exist: ANSI has the backslash key (LED 62)
+# and no 77 and 7e, so the predefined `keys` zone differs.
+# layout = "iso-fr"
+
 # --- zones -----------------------------------------------------------------
 # Each LED belongs to at most one zone. LEDs in no zone keep their previous
 # color (off after a mode switch); `lightmount check` lists them.
@@ -29,7 +34,7 @@ allow_unknown_firmware = false
 #
 # Vendor LED indexes (row by row, left to right):
 #   00-2c  top strip          2d     knob
-#   2e-9d  keys (62 and 89 do not exist; ranges may span them)
+#   2e-9d  keys (ISO: 62 and 89 do not exist; ANSI: 77, 7e and 89; ranges may span them)
 #   9e-a2  left side strip    a3-a7  right side strip
 # This section replaces the default zones entirely.
 

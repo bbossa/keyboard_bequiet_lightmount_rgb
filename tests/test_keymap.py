@@ -34,11 +34,46 @@ class KeyMap(unittest.TestCase):
             self.assertEqual(xs, sorted(xs), f'row y={y}')
 
 
+class AnsiUS(unittest.TestCase):
+    def test_covers_every_led_once(self):
+        self.assertEqual(sorted(keymap.all_leds(layout.ANSI_US)), layout.all_leds(layout.ANSI_US))
+
+    def test_differs_from_iso_by_three_keys(self):
+        iso, ansi = keymap.keys(layout.ISO_FR), keymap.keys(layout.ANSI_US)
+        self.assertEqual(sorted(set(iso) - set(ansi)), [0x77, 0x7e])
+        self.assertEqual(sorted(set(ansi) - set(iso)), [0x62])
+        self.assertEqual(ansi[0x62][0], '\\ |')
+
+    def test_reported_legends(self):
+        ansi = keymap.keys(layout.ANSI_US)
+        self.assertEqual([ansi[i][0] for i in (0x3f, 0x56, 0x57, 0x6c, 0x7f, 0x85, 0x9d)],
+                         ['` ~', 'Q', 'W', 'A', 'Z', 'M', '.'])
+        self.assertEqual(len(keymap.ANSI_US_LEGENDS), 27)  # 29 differences with ISO, 2 are absent keys
+
+    def test_rows_left_to_right(self):
+        rows = {}
+        for i in sorted(keymap.ANSI_US_KEYS):
+            rows.setdefault(keymap.ANSI_US_KEYS[i][2], []).append(keymap.ANSI_US_KEYS[i][1])
+        self.assertEqual(len(rows), 6)
+        for y, xs in rows.items():
+            self.assertEqual(xs, sorted(xs), f'row y={y}')
+
+    def test_calibrate_lists_the_backslash_key(self):
+        writes = []
+        args = mock.Mock(config='/nonexistent/lightmount.toml', start=0x61, layout=layout.ANSI_US)
+        out = io.StringIO()
+        with mock.patch.object(daemon, 'write', lambda cfg, entries: writes.append(entries)), \
+                contextlib.redirect_stdout(out):
+            cli.calibrate(args, ask=lambda prompt: 'q')
+        self.assertIn('Layout ansi-us', out.getvalue())
+        self.assertEqual(writes[1], [(0x61, cli.CALIBRATE_ON)])
+
+
 class Calibrate(unittest.TestCase):
-    def run_calibrate(self, answers, start=0):
+    def run_calibrate(self, answers, start=0, layout_name=None):
         writes = []
         answers = iter(answers)
-        args = mock.Mock(config='/nonexistent/lightmount.toml', start=start)
+        args = mock.Mock(config='/nonexistent/lightmount.toml', start=start, layout=layout_name)
         out = io.StringIO()
         with mock.patch.object(daemon, 'write', lambda cfg, entries: writes.append(entries)), \
                 contextlib.redirect_stdout(out):
@@ -65,7 +100,7 @@ class Calibrate(unittest.TestCase):
         def ask(prompt):
             raise KeyboardInterrupt
         writes = []
-        args = mock.Mock(config='/nonexistent/lightmount.toml', start=0)
+        args = mock.Mock(config='/nonexistent/lightmount.toml', start=0, layout=None)
         with mock.patch.object(daemon, 'write', lambda cfg, entries: writes.append(entries)), \
                 contextlib.redirect_stdout(io.StringIO()), self.assertRaises(KeyboardInterrupt):
             cli.calibrate(args, ask=ask)

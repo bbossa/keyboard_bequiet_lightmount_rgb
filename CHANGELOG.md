@@ -6,6 +6,10 @@ The section of a version is used as the notes of its GitHub release.
 
 ## [Unreleased]
 
+### Added
+
+- ANSI US key map (experimental), from the `calibrate` report of the first ANSI owner (issue #1): `[device] layout = "ansi-us"` in the config (default `iso-fr`) and `lightmount calibrate --layout ansi-us`. ANSI has the backslash key (LED `62`, awaiting a test on a keyboard) and no `77` and `7e`; the predefined `keys` zone follows the layout, and the editor draws the ANSI keyboard.
+
 ## [0.2.0] - 2026-10-28
 
 ### Added

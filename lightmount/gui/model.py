@@ -29,9 +29,9 @@ def hex_color(value):
     return text if len(text) == 6 and all(c in '0123456789abcdef' for c in text) else None
 
 
-def compact(leds):
-    """{0, 1, 2, 0x61, 0x63} → ['00-02', '61-63']: runs follow layout.ALL, so a range may span 62 and 89."""
-    order = {led: n for n, led in enumerate(layout.ALL)}
+def compact(leds, layout_name=layout.DEFAULT):
+    """{0, 1, 2, 0x61, 0x63} → ['00-02', '61-63']: runs follow the LEDs of the layout, so a range may span the unused indexes."""
+    order = {led: n for n, led in enumerate(layout.all_leds(layout_name))}
     out, start, prev = [], None, None
     for led in sorted(leds, key=order.__getitem__):
         if start is not None and order[led] == order[prev] + 1:
@@ -54,6 +54,9 @@ class Model:
         """`raw`: TOML content of the config file ({} if none). Problems are collected in `errors`."""
         self.errors = []
         self.zones = {}
+        device = raw.get('device')
+        name = device.get('layout', layout.DEFAULT) if isinstance(device, dict) else layout.DEFAULT
+        self.layout = name if name in layout.NAMES else layout.DEFAULT  # an invalid name is reported by save/validate
         section = raw.get('zones', config.DEFAULTS['zones'])
         if not isinstance(section, dict):
             self.errors.append('zones: expected a table')
@@ -76,10 +79,10 @@ class Model:
     def parse_zone(self, name, value):
         errors = []
         if isinstance(value, str):  # predefined zone given as a plain color
-            leds, color, dim = layout.ZONES.get(name, ()), value, None
+            leds, color, dim = layout.zones(self.layout).get(name, ()), value, None
         elif isinstance(value, dict):
-            leds = (config.parse_leds(value['leds'], f'zones.{name}.leds', errors) if 'leds' in value
-                    else layout.ZONES.get(name, ()))
+            leds = (config.parse_leds(value['leds'], f'zones.{name}.leds', errors, self.layout) if 'leds' in value
+                    else layout.zones(self.layout).get(name, ()))
             color, dim = value.get('color', '000000'), value.get('dim')
         else:
             self.errors.append(f'zones.{name}: expected a color string or a table')
@@ -100,19 +103,20 @@ class Model:
 
     def unassigned(self):
         owned = set().union(*(z.leds for z in self.zones.values())) if self.zones else set()
-        return [i for i in layout.ALL if i not in owned]
+        return [i for i in layout.all_leds(self.layout) if i not in owned]
 
     def raw(self):
-        """{'zones': ..., 'alerts': ...} raw tables, for save.write() and daemon.preview()."""
+        """{'device': ..., 'zones': ..., 'alerts': ...} raw tables, for save.write() (zones and alerts only)
+        and daemon.preview(): `device` only carries the layout, the rest of the file is not the editor's."""
         zones = {}
         for name, zone in self.zones.items():
             if not zone.leds:
                 continue
-            table = {'leds': compact(zone.leds), 'color': zone.color}
+            table = {'leds': compact(zone.leds, self.layout), 'color': zone.color}
             if zone.dim is not None and zone.dim != 1:
                 table['dim'] = zone.dim
             zones[name] = table
-        return {'zones': zones, 'alerts': copy.deepcopy(self.alerts)}
+        return {'device': {'layout': self.layout}, 'zones': zones, 'alerts': copy.deepcopy(self.alerts)}
 
     def validate(self):
         """(errors, warnings) of the config this model would write."""

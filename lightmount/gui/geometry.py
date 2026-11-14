@@ -1,4 +1,4 @@
-"""Drawing geometry of the Light Mount, ISO layout, in key units (1 u = 19.05 mm).
+"""Drawing geometry of the Light Mount (ISO and ANSI), in key units (1 u = 19.05 mm).
 
 keymap.py holds LampArray LED positions, which are not key outlines (the M1-M5
 column would overlap Esc): the outlines come from the standard ISO sizes below,
@@ -19,7 +19,7 @@ TALL, ISO_ENTER = 'tall', 'iso_enter'
 
 # (y, tokens): a number is a key of that width, ('at', x) moves to x,
 # ('gap', w) skips w, TALL is a 1 u key two rows high, ISO_ENTER the L-shaped Enter.
-ROWS = [
+ROWS_ISO = [
     (0.0, [1, ('at', MAIN), 1, ('gap', 1), 1, 1, 1, 1, ('gap', 0.5), 1, 1, 1, 1, ('gap', 0.5), 1, 1, 1, 1,
            ('at', NAV), 1, 1, 1]),
     (1.5, [1, ('at', MAIN)] + [1] * 13 + [2, ('at', NAV), 1, 1, 1, ('at', PAD), 1, 1, 1, 1]),
@@ -30,6 +30,13 @@ ROWS = [
            ('at', PAD), 2, 1]),
 ]
 
+# ANSI: long Shift, backslash key (1.5 u) after the brackets, Enter 2.25 u; the rest is the same
+ROWS_ANSI = ROWS_ISO[:2] + [
+    (2.5, [1, ('at', MAIN), 1.5] + [1] * 12 + [1.5, ('at', NAV), 1, 1, 1, ('at', PAD), 1, 1, 1, TALL]),
+    (3.5, [1, ('at', MAIN), 1.75] + [1] * 11 + [2.25, ('at', PAD), 1, 1, 1]),
+    (4.5, [1, ('at', MAIN), 2.25] + [1] * 10 + [2.75, ('at', NAV + 1), 1, ('at', PAD), 1, 1, 1, TALL]),
+] + ROWS_ISO[5:]
+ROWS = {layout.ISO_FR: ROWS_ISO, layout.ANSI_US: ROWS_ANSI}
 
 KEY, KNOB, SEGMENT = 'key', 'knob', 'strip'  # Shape.kind
 
@@ -53,22 +60,22 @@ class Shape:
         return self.rects[-1]
 
 
-def row_leds():
-    """{y in mm: [LED index sorted by x]} for the keys, the knob on the F row."""
+def row_leds(name=layout.DEFAULT):
+    """[[LED index sorted by x]] per row for the keys, the knob on the F row."""
     rows = {}
-    for i, (_, x, y) in {**keymap.KNOB, **keymap.KEYS}.items():
+    for i, (_, x, y) in {**keymap.KNOB, **keymap.keys(name)}.items():
         rows.setdefault(y, []).append((x, i))
     return [[i for _, i in sorted(leds)] for _, leds in sorted(rows.items())]
 
 
-def keys():
+def keys(name=layout.DEFAULT):
     """Shapes of the knob and the keys."""
-    legends = {i: legend for i, (legend, _, _) in {**keymap.KNOB, **keymap.KEYS}.items()}
-    rows = row_leds()
-    if len(rows) != len(ROWS):
-        raise ValueError(f'keymap has {len(rows)} rows, geometry {len(ROWS)}')
+    legends = {i: legend for i, (legend, _, _) in {**keymap.KNOB, **keymap.keys(name)}.items()}
+    rows, geometry_rows = row_leds(name), ROWS[name]
+    if len(rows) != len(geometry_rows):
+        raise ValueError(f'keymap has {len(rows)} rows, geometry {len(geometry_rows)}')
     shapes = []
-    for (y, tokens), leds in zip(ROWS, rows):
+    for (y, tokens), leds in zip(geometry_rows, rows):
         leds, x = iter(leds), 0.0
         for token in tokens:
             if isinstance(token, tuple):
@@ -106,8 +113,8 @@ def strips():
     return shapes
 
 
-def shapes():
-    return keys() + strips()
+def shapes(name=layout.DEFAULT):
+    return keys(name) + strips()
 
 
 # whole drawing, strips included: x0, y0, x1, y1

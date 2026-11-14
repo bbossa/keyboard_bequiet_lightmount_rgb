@@ -69,14 +69,14 @@ lightmount apply     # apply the zones once
 lightmount reload    # have the service reread the config (validated first)
 lightmount status    # device, version, lighting mode, daemon state
 lightmount alert normal|critical|error   # test an alert
-lightmount calibrate # light the keys one by one to check the key map (ISO French layout)
+lightmount calibrate # light the keys one by one to check the key map (--layout iso-fr|ansi-us)
 ```
 
 The service (`lightmount watch`) applies the zones at startup. After editing the config, run `lightmount reload` (or `systemctl --user reload lightmount`): the config is validated first, and an invalid one is refused, the service keeps the previous one. `[daemon]` and `alerts.sources.notifications` are only read at startup: changing them needs `systemctl --user restart lightmount`.
 
 ## Graphical editor (preview)
 
-A GTK4 editor draws the keyboard (ISO French layout) and edits the zones and alerts: select keys with the mouse, create or change zones, pick colors, preview them live on the keyboard, then save (the config is rewritten keeping its comments, the previous file is kept as `config.toml.bak`, and the service rereads it).
+A GTK4 editor draws the keyboard (ISO French layout, or ANSI US with `layout = "ansi-us"` in `[device]`, experimental) and edits the zones and alerts: select keys with the mouse, create or change zones, pick colors, preview them live on the keyboard, then save (the config is rewritten keeping its comments, the previous file is kept as `config.toml.bak`, and the service rereads it).
 
 Not packaged yet: run it from a checkout, with PyGObject and GTK 4 installed (Arch: `python-gobject gtk4`, Debian/Ubuntu: `python3-gi gir1.2-gtk-4.0`, Fedora: `python3-gobject gtk4`):
 

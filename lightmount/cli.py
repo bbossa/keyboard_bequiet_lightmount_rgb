@@ -1,7 +1,7 @@
 """lightmount: lighting for the be quiet! Light Mount keyboard (fixed zones + alerts)."""
 import argparse, logging, os, shutil, subprocess, sys
 
-from . import __version__, config, daemon, device, keymap, protocol
+from . import __version__, config, daemon, device, keymap, layout, protocol
 
 MODES = {protocol.MODE_EFFECTS: 'effects (01): firmware effects, 10:0d ignored',
          protocol.MODE_CUSTOM: 'custom (03): per-LED colors'}
@@ -77,9 +77,10 @@ CALIBRATE_ON, CALIBRATE_OFF = (0xff, 0xff, 0xff), (0, 0, 0)
 def calibrate(args, ask=input):
     """Light the keys one by one so the user confirms keymap.py; the zones are reapplied at the end."""
     cfg = load(args)
-    leds = {**keymap.KNOB, **keymap.KEYS}
+    name = args.layout or cfg['device']['layout']
+    leds = {**keymap.KNOB, **keymap.keys(name)}
     todo = [i for i in sorted(leds) if i >= args.start]
-    print(f'{len(todo)} LEDs, one at a time: Enter = the lit key matches, '
+    print(f'Layout {name}: {len(todo)} LEDs, one at a time: Enter = the lit key matches, '
           'otherwise type what is lit (or "q" to stop).')
     wrong = {}
     try:
@@ -148,7 +149,9 @@ def parser():
     p = sub.add_parser('alert', help='one-shot alert (through the daemon if it runs)')
     p.add_argument('kind', choices=config.ALERTS)
     p.set_defaults(run=alert)
-    p = sub.add_parser('calibrate', help='light the keys one by one to check the key map (ISO French)')
+    p = sub.add_parser('calibrate', help='light the keys one by one to check the key map')
+    p.add_argument('--layout', choices=layout.NAMES,
+                   help='key map to check (default: device.layout of the config, iso-fr)')
     p.add_argument('--start', type=lambda s: int(s, 16), default=0, metavar='HEX',
                    help='first LED index, e.g. 73 to resume')
     p.set_defaults(run=calibrate)

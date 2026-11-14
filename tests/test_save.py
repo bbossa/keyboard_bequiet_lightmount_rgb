@@ -45,7 +45,7 @@ class Dumps(unittest.TestCase):
     def test_comments_above_tables_kept(self):
         new = save.dumps(self.text, self.raw['zones'], self.raw['alerts'])
         for line in ('# --- zones ---', '# --- alerts ---', '# Several Light Mount keyboards plugged in',
-                     '#   2e-9d  keys (62 and 89 do not exist; ranges may span them)'):
+                     '#   2e-9d  keys (ISO: 62 and 89 do not exist; ANSI: 77, 7e and 89; ranges may span them)'):
             self.assertIn(line, new)
         self.assertTrue(new.startswith('# lightmount configuration'))
         # the zones are written where they were: before the alerts

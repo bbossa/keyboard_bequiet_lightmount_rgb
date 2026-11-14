@@ -21,7 +21,7 @@ MAX_DURATION = 60
 MAX_POLL = 3600
 
 DEFAULTS = {
-    'device': {'usb_path': '', 'allow_unknown_firmware': False},
+    'device': {'usb_path': '', 'allow_unknown_firmware': False, 'layout': layout.DEFAULT},
     'daemon': {'poll_interval': 0, 'reapply_on_effect_key': True},
     'zones': {'top': '49412f', 'knob': 'ff2a00', 'keys': 'ff2a00', 'left': '0000ff', 'right': 'ff0000'},
     'alerts': {'zone': 'top', 'duration': 1.25, 'normal': '00ff00', 'critical': 'ff0000', 'error': 'e66100',
@@ -68,6 +68,13 @@ def validate(raw):
         device['allow_unknown_firmware'] = typed(section['allow_unknown_firmware'], bool,
                                                  'device.allow_unknown_firmware', errors, False)
 
+    if 'layout' in section:
+        name = section['layout']
+        if name in layout.NAMES:
+            device['layout'] = name
+        else:
+            errors.append(f'device.layout: expected one of {", ".join(layout.NAMES)}, got {name!r}')
+
     daemon = dict(DEFAULTS['daemon'])
     section = table(raw, 'daemon', errors)
     unknown(section, daemon, 'daemon.', errors)
@@ -85,7 +92,7 @@ def validate(raw):
     if not zone_section:
         errors.append('zones: no zone defined')
     for name, value in zone_section.items():
-        zone = parse_zone(name, value, errors)
+        zone = parse_zone(name, value, errors, device['layout'])
         if zone is not None:
             zones[name] = zone
 
@@ -95,7 +102,7 @@ def validate(raw):
             if i in owner and owner[i] != name:
                 errors.append(f'zones.{name}: LED {i:02x} is already in zone {owner[i]}')
             owner.setdefault(i, name)
-    missing = [i for i in layout.ALL if i not in owner]
+    missing = [i for i in layout.all_leds(device['layout']) if i not in owner]
     if zones and missing:
         warnings.append(f'LEDs in no zone (keep their previous color, off after a mode switch): '
                         f'{format_leds(missing)}')
@@ -165,7 +172,7 @@ def color(value, where, errors):
     return rgb(text)
 
 
-def parse_leds(value, where, errors):
+def parse_leds(value, where, errors, layout_name=layout.DEFAULT):
     """["00-2c", "2d", 0x30] → sorted list of indexes."""
     if not isinstance(value, list) or not value:
         errors.append(f'{where}: expected a non-empty list such as ["00-2c", "2d"]')
@@ -191,7 +198,7 @@ def parse_leds(value, where, errors):
             if i > layout.LAST:
                 errors.append(f'{where}: LED {i:02x} out of range (00-{layout.LAST:02x})')
                 break
-            if i in layout.UNUSED:
+            if i in layout.unused(layout_name):
                 if lo != hi:  # ranges may span the unused indexes, as in the default keys zone
                     continue
                 errors.append(f'{where}: LED {i:02x} is not used by the keyboard')
@@ -202,22 +209,23 @@ def parse_leds(value, where, errors):
     return sorted(set(leds))
 
 
-def parse_zone(name, value, errors):
+def parse_zone(name, value, errors, layout_name=layout.DEFAULT):
     where = f'zones.{name}'
     if isinstance(value, str):
-        if name not in layout.ZONES:
-            errors.append(f'{where}: "{name}" is not a predefined zone ({", ".join(layout.ZONES)}); '
+        predefined = layout.zones(layout_name)
+        if name not in predefined:
+            errors.append(f'{where}: "{name}" is not a predefined zone ({", ".join(predefined)}); '
                           f'use a [{where}] table with leds and color')
             return None
-        return {'leds': list(layout.ZONES[name]), 'color': color(value, where, errors)}
+        return {'leds': list(predefined[name]), 'color': color(value, where, errors)}
     if not isinstance(value, dict):
         errors.append(f'{where}: expected a color string or a table')
         return None
     unknown(value, ('leds', 'color', 'dim'), f'{where}.', errors)
     if 'leds' in value:
-        leds = parse_leds(value['leds'], f'{where}.leds', errors)
-    elif name in layout.ZONES:
-        leds = list(layout.ZONES[name])
+        leds = parse_leds(value['leds'], f'{where}.leds', errors, layout_name)
+    elif name in layout.zones(layout_name):
+        leds = list(layout.zones(layout_name)[name])
     else:
         errors.append(f'{where}: leds missing')
         leds = []

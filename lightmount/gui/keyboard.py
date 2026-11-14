@@ -23,7 +23,7 @@ class KeyboardView(Gtk.DrawingArea):
     def __init__(self, model):
         super().__init__(hexpand=True, vexpand=True, content_width=700, content_height=220)
         self.model = model
-        self.shapes = geometry.shapes()
+        self.shapes = geometry.shapes(model.layout)
         self.selection = set()
         self.focus = None        # zone shown alone in color (the zone being edited); None: all zones
         self.band = None         # rubber band, in key units: (x0, y0, x1, y1)

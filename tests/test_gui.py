@@ -54,6 +54,47 @@ def example():
         return tomllib.load(f)
 
 
+class AnsiGeometry(unittest.TestCase):
+    def test_every_led_drawn_once(self):
+        indexes = [s.index for s in geometry.shapes(layout.ANSI_US)]
+        self.assertEqual(sorted(indexes), sorted(layout.all_leds(layout.ANSI_US)))
+
+    def test_keys_do_not_overlap(self):
+        keys = geometry.keys(layout.ANSI_US)
+        for n, a in enumerate(keys):
+            for b in keys[n + 1:]:
+                for x, y, w, h in a.rects:
+                    self.assertFalse(b.intersects(x + 0.01, y + 0.01, x + w - 0.01, y + h - 0.01),
+                                     f'{a.legend} / {b.legend}')
+
+    def test_ansi_sizes(self):
+        by_legend = {}
+        for s in geometry.keys(layout.ANSI_US):
+            by_legend.setdefault(s.legend, []).append(s)
+        self.assertEqual([s.rects[0][2] for s in by_legend['Shift']], [2.25, 2.75])
+        self.assertEqual(by_legend['\\ |'][0].rects[0][2], 1.5)
+        self.assertEqual([s.rects[0][2] for s in by_legend['Enter'] if len(s.rects) == 1 and s.rects[0][3] == 1],
+                         [2.25])
+
+    def test_main_block_is_15_u_wide_on_every_row(self):
+        ends = {}
+        for s in geometry.keys(layout.ANSI_US):
+            for x, y, w, h in s.rects:
+                if x < geometry.NAV - 0.1:
+                    ends[y] = max(ends.get(y, 0), x + w)
+        for y, end in ends.items():
+            if y > 0:
+                self.assertAlmostEqual(end, geometry.MAIN + 15, msg=f'row y={y}')
+
+    def test_model_follows_the_config_layout(self):
+        m = model.Model({'device': {'layout': 'ansi-us'}, 'zones': {'top': '49412f', 'keys': 'ff0000'}})
+        self.assertIn(0x62, m.zones['keys'].leds)
+        self.assertNotIn(0x77, m.zones['keys'].leds)
+        self.assertEqual(m.raw()['zones']['keys']['leds'], ['2e-9d'])
+        self.assertEqual(m.raw()['device'], {'layout': 'ansi-us'})
+        self.assertEqual(m.validate()[0], [])
+
+
 class Model(unittest.TestCase):
     def test_defaults(self):
         m = model.Model({})

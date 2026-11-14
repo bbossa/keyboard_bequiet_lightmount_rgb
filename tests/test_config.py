@@ -94,6 +94,37 @@ class Zones(unittest.TestCase):
         self.assertIn('2d-61, 63-88, 8a-a7', warnings[0])  # 62 and 89 do not exist
 
 
+class Layouts(unittest.TestCase):
+    ANSI = '[device]\nlayout = "ansi-us"\n'
+
+    def test_default_is_iso_french(self):
+        self.assertEqual(parse('')[0]['device']['layout'], 'iso-fr')
+
+    def test_ansi_keys_zone_has_the_backslash_key(self):
+        cfg, errors, warnings = parse(self.ANSI + '[zones]\nkeys = "ffffff"\n', 'keys')
+        self.assertEqual(errors, [])
+        self.assertIn(0x62, cfg['zones']['keys']['leds'])
+        for led in (0x77, 0x7e, 0x89):
+            self.assertNotIn(led, cfg['zones']['keys']['leds'])
+        self.assertIn('00-2d', warnings[0])  # the other zones are uncovered
+
+    def test_iso_keys_zone_unchanged(self):
+        cfg, _, _ = parse('[zones]\nkeys = "ffffff"\n')
+        self.assertNotIn(0x62, cfg['zones']['keys']['leds'])
+        self.assertIn(0x77, cfg['zones']['keys']['leds'])
+
+    def test_single_led_must_exist_in_the_layout(self):
+        text = '[zones.a]\nleds = ["%s"]\ncolor = "ffffff"\n'
+        self.assertEqual(parse(self.ANSI + text % '62', 'a')[1], [])
+        self.assertIn('not used', parse(self.ANSI + text % '77', 'a')[1][0])
+        self.assertIn('not used', parse(text % '62', 'a')[1][0])
+
+    def test_unknown_layout(self):
+        _, errors, _ = parse('[device]\nlayout = "azerty"\n')
+        self.assertEqual(len(errors), 1)
+        self.assertIn('device.layout', errors[0])
+
+
 class Errors(unittest.TestCase):
     def assertError(self, text, *fragments):
         _, errors, _ = parse(text)
