@@ -6,6 +6,13 @@ The section of a version is used as the notes of its GitHub release.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-16
+
+### Fixed
+
+- ANSI US layout: the legends of LED `60`/`61` are `[ {` / `] }` (keycap order), and the layout is now marked verified: `lightmount calibrate --layout ansi-us` on an ANSI US keyboard ends with 0 mismatches, including LED `62` as the backslash key (issue #1).
+- README: the Safety section states that lightmount never reads or writes keystrokes.
+
 ## [0.3.0] - 2026-11-14
 
 ### Added

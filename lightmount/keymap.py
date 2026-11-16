@@ -145,12 +145,13 @@ ALL = {**TOP, **KNOB, **KEYS, **LEFT, **RIGHT}
 # ANSI US: same numbering, same key centers except the three keys of the ISO block
 # (77, 7e removed, 62 added: the backslash key at the end of the QWERTY row).
 # Legends from `lightmount calibrate` run on an ANSI US keyboard (issue #1: 29 differences
-# with ISO French, 27 relabeled keys and 2 absent ones). Not verified on a keyboard: LED 62 (found missing by the
-# reporter, who saw no LED for the backslash key) and the key sizes in gui/geometry.py.
+# with ISO French, 27 relabeled keys and 2 absent ones). Verified on an ANSI US keyboard:
+# `calibrate --layout ansi-us` ends with 0 mismatches (issue #1, 2026-11-15), including LED 62
+# as the backslash key. Not measured: the key sizes in gui/geometry.py.
 ANSI_US_LEGENDS = {
     0x3f: '` ~', 0x40: '1 !', 0x41: '2 @', 0x42: '3 #', 0x43: '4 $', 0x44: '5 %', 0x45: '6 ^',
     0x46: '7 &', 0x47: '8 *', 0x48: '9 (', 0x49: '0 )', 0x4a: '- _', 0x4b: '= +',
-    0x56: 'Q', 0x57: 'W', 0x58: 'E', 0x60: '{ [', 0x61: '} ]',
+    0x56: 'Q', 0x57: 'W', 0x58: 'E', 0x60: '[ {', 0x61: '] }',
     0x6c: 'A', 0x75: '; :', 0x76: '\' "',
     0x7f: 'Z', 0x85: 'M', 0x86: ', <', 0x87: '. >', 0x88: '/ ?', 0x9d: '.',
 }

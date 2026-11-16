@@ -156,7 +156,8 @@ The keyboard keeps its last colors until it is unplugged, then restarts with its
 
 ## Safety
 
-- Only two kinds of frames are written: standard HID LampArray reports, and vendor frames that are reproduced byte for byte from captures of the vendor software (`make check`).
+- Only two kinds of frames are written: standard HID LampArray reports, and vendor frames that are reproduced byte for byte from captures of the vendor software (`make check`). The only frames sent are the ones documented in `lightmount/protocol.py`.
+- lightmount never reads or writes keystrokes: the only keyboard events it reads are the Fn+←/→ effect keys (bytes 1 and 3), and no key content is ever logged.
 - No firmware update is ever sent, and no firmware-related frame is replayed.
 - Custom colors are volatile (lost on unplug): alerts do not wear the keyboard's flash memory.
 
