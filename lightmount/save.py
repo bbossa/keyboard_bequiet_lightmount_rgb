@@ -82,10 +82,10 @@ def table_path(header):
     return tuple(part.strip().strip('"\'') for part in header.split('.'))
 
 
-def group(header):
+def group(header, managed=MANAGED):
     """'zones.top' → 'zones'; None for a table this module does not manage."""
     first = table_path(header)[0]
-    return first if first in MANAGED else None
+    return first if first in managed else None
 
 
 def inline_comment(rest):
@@ -102,13 +102,13 @@ def inline_comment(rest):
     return None
 
 
-def end_comments(text):
+def end_comments(text, managed=MANAGED):
     """{(table path, key): (column, '# text')} for the keys of the managed tables."""
     out, path = {}, None
     for line in text.splitlines():
         match = HEADER.match(line)
         if match:
-            path = table_path(match['name']) if group(match['name']) else None
+            path = table_path(match['name']) if group(match['name'], managed) else None
             continue
         match = ASSIGNMENT.match(line) if path else None
         if match and (found := inline_comment(match['rest'])):
@@ -117,7 +117,7 @@ def end_comments(text):
     return out
 
 
-def segments(text):
+def segments(text, managed=MANAGED):
     """Lines → [(group or None, comments, body)]: `comments` are the comment and blank
     lines just above a table header, `body` the header and its content. The first
     segment (before any header) has an empty body header."""
@@ -126,7 +126,7 @@ def segments(text):
     for line in text.splitlines(keepends=True):
         match = HEADER.match(line)
         if match:
-            out.append([group(match['name']), pending, [line]])
+            out.append([group(match['name'], managed), pending, [line]])
             pending = []
         elif not line.strip() or line.lstrip().startswith('#'):
             pending.append(line)
@@ -137,14 +137,14 @@ def segments(text):
     return out
 
 
-def replace(text, rendered):
+def replace(text, rendered, managed=MANAGED):
     """Swap the managed tables of `text` for `rendered` ({group: TOML text}).
 
     Each group is written where it first appeared, after the comments above it;
     a group the file did not have is appended. The comments above later tables
     of a group are kept, their content is dropped."""
     parts, done = [], set()
-    for grp, comments, body in segments(text):
+    for grp, comments, body in segments(text, managed):
         if grp in done and not any(line.strip() for line in comments):
             continue  # only blank lines between two replaced tables
         parts += comments
@@ -154,7 +154,7 @@ def replace(text, rendered):
             parts.append(rendered[grp] + '\n')
             done.add(grp)
     out = ''.join(parts)
-    for grp in MANAGED:
+    for grp in managed:
         if grp not in done:
             out = out.rstrip('\n') + ('\n\n' if out.strip() else '') + rendered[grp] + '\n'
     return out
@@ -162,16 +162,27 @@ def replace(text, rendered):
 
 # --- writing ------------------------------------------------------------------------
 
-def dumps(text, zones, alerts):
-    """New file content; SaveError or config.ConfigError if it would not be valid."""
-    comments = end_comments(text)
-    new = replace(text, {grp: render((grp,), table, comments) for grp, table in (('zones', zones), ('alerts', alerts))})
+def dumps(text, zones, alerts, device=None):
+    """New file content; SaveError or config.ConfigError if it would not be valid.
+
+    `device`: keys to set in [device] (e.g. {'layout': 'ansi-us'}), merged over the
+    existing table so its other keys are kept; None to leave [device] alone."""
+    tables = {'zones': zones, 'alerts': alerts}
+    if device is not None:
+        try:
+            old = tomllib.loads(text).get('device', {})
+        except tomllib.TOMLDecodeError:
+            old = {}
+        tables['device'] = {**(old if isinstance(old, dict) else {}), **device}
+    managed = tuple(tables)
+    comments = end_comments(text, managed)
+    new = replace(text, {grp: render((grp,), table, comments) for grp, table in tables.items()}, managed)
     try:
         before, after = tomllib.loads(text), tomllib.loads(new)
     except tomllib.TOMLDecodeError as e:
         raise SaveError(f'TOML syntax: {e}')
-    kept = lambda raw: {k: v for k, v in raw.items() if k not in MANAGED}
-    if kept(before) != kept(after) or after.get('zones') != zones or after.get('alerts') != alerts:
+    kept = lambda raw: {k: v for k, v in raw.items() if k not in managed}
+    if kept(before) != kept(after) or any(after.get(grp) != table for grp, table in tables.items()):
         raise SaveError('the file could not be rewritten safely (unusual layout); edit it by hand')
     _, errors, _ = config.validate(after)
     if errors:
@@ -179,16 +190,16 @@ def dumps(text, zones, alerts):
     return new
 
 
-def write(path, zones, alerts, backup=True):
-    """Replace [zones] and [alerts] in the config file, atomically.
-
-    The previous file is copied to `<path>.bak` first. Returns the validation warnings."""
+def write(path, zones, alerts, device=None, backup=True):
+    """Replace [zones] and [alerts] in the config file, atomically; set the given
+    [device] keys (merged over the existing table). The previous file is copied
+    to `<path>.bak` first. Returns the validation warnings."""
     try:
         with open(path, encoding='utf-8') as f:
             text = f.read()
     except FileNotFoundError:
         text = None
-    new = dumps(text or '', zones, alerts)
+    new = dumps(text or '', zones, alerts, device)
     folder = os.path.dirname(os.path.abspath(path))
     os.makedirs(folder, exist_ok=True)
     if text is not None and backup:

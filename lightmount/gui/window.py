@@ -5,7 +5,7 @@ import gi
 gi.require_version('Gtk', '4.0')
 from gi.repository import Gdk, GLib, Gtk  # noqa: E402
 
-from .. import config, daemon, device, save  # noqa: E402
+from .. import config, daemon, device, layout, save  # noqa: E402
 from .i18n import _  # noqa: E402
 from .keyboard import KeyboardView  # noqa: E402
 from .model import Model, hex_color  # noqa: E402
@@ -65,6 +65,12 @@ class Window(Gtk.ApplicationWindow):
         self.preview_switch = Gtk.Switch(valign=Gtk.Align.CENTER)
         self.preview_switch.connect('notify::active', self.on_preview_toggled)
         box.append(self.preview_switch)
+        header.pack_start(box)
+        box = Gtk.Box(spacing=6, tooltip_text=_('Physical layout of the keyboard: which keys exist, and where'))
+        box.append(Gtk.Label(label=_('Layout')))
+        self.layout_dropdown = Gtk.DropDown.new_from_strings([_(layout.LABELS[n]) for n in layout.NAMES])
+        self.layout_dropdown.connect('notify::selected', self.on_layout)
+        box.append(self.layout_dropdown)
         header.pack_start(box)
         self.set_titlebar(header)
 
@@ -225,11 +231,17 @@ class Window(Gtk.ApplicationWindow):
         return zones, zone, box
 
     def refresh_all(self):
+        self.refresh_layout()
         self.refresh_zone_rows(rebuild=True)
         self.refresh_editor()
         self.refresh_alerts()
         self.refresh_selection()
         self.view.queue_draw()
+
+    def refresh_layout(self):
+        self.updating = True
+        self.layout_dropdown.set_selected(layout.NAMES.index(self.model.layout))
+        self.updating = False
 
     def refresh_zone_rows(self, rebuild=False):
         names = list(self.model.zones)
@@ -307,6 +319,18 @@ class Window(Gtk.ApplicationWindow):
         self.view.queue_draw()
 
     # --- handlers -----------------------------------------------------------------------
+
+    def on_layout(self, dropdown, param):
+        if self.updating:
+            return
+        name = layout.NAMES[dropdown.get_selected()]
+        removed = self.model.set_layout(name)
+        self.view.set_layout(name)
+        self.refresh_all()
+        self.changed()
+        if removed:
+            self.show_status(_('LEDs that do not exist in this layout were removed from their zones: {leds}',
+                               leds=' '.join(f'{i:02x}' for i in sorted(removed))))
 
     def on_zone_selected(self, listbox, row):
         if self.updating or row is None:
@@ -467,7 +491,7 @@ class Window(Gtk.ApplicationWindow):
         self.on_rename()
         raw = self.model.raw()
         try:
-            warnings = save.write(self.path, raw['zones'], raw['alerts'])
+            warnings = save.write(self.path, raw['zones'], raw['alerts'], device={'layout': raw['device']['layout']})
         except (save.SaveError, config.ConfigError, OSError) as e:
             self.show_status(_('Not saved: {error}', error=e), error=True)
             return False

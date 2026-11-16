@@ -42,6 +42,23 @@ class Dumps(unittest.TestCase):
         self.assertEqual(tomllib.loads(new), self.raw)
         self.assertEqual(config.validate(tomllib.loads(new))[0], config.validate(self.raw)[0])
 
+    def test_device_keys_merged(self):
+        new = save.dumps(self.text, self.raw['zones'], self.raw['alerts'], device={'layout': 'ansi-us'})
+        after = tomllib.loads(new)
+        self.assertEqual(after['device']['layout'], 'ansi-us')
+        self.assertEqual(after['device']['allow_unknown_firmware'], self.raw['device']['allow_unknown_firmware'])
+        self.assertTrue(new.startswith('# lightmount configuration'))  # comments above [device] kept
+        self.assertEqual({k: v for k, v in after.items() if k != 'device'},
+                         {k: v for k, v in self.raw.items() if k != 'device'})
+
+    def test_device_table_created_when_absent(self):
+        text = '[zones.top]\nleds = ["00-2c"]\ncolor = "f4dbae"\n'
+        zones = {'top': {'leds': ['00-2c'], 'color': 'f4dbae'}}
+        new = save.dumps(text, zones, {'zone': 'top'}, device={'layout': 'ansi-us'})
+        after = tomllib.loads(new)
+        self.assertEqual(after['device'], {'layout': 'ansi-us'})
+        self.assertEqual(after['zones'], zones)
+
     def test_comments_above_tables_kept(self):
         new = save.dumps(self.text, self.raw['zones'], self.raw['alerts'])
         for line in ('# --- zones ---', '# --- alerts ---', '# Several Light Mount keyboards plugged in',

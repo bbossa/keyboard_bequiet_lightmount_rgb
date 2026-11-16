@@ -15,9 +15,10 @@
 # read-only (warning in the log) unless this is set to true.
 allow_unknown_firmware = false
 
-# Key layout: "iso-fr" (default) or "ansi-us" (experimental, awaiting a test on a
-# keyboard). It changes the keys that exist: ANSI has the backslash key (LED 62)
-# and no 77 and 7e, so the predefined `keys` zone differs.
+# Key layout: "iso-fr" (default) or "ansi-us" (verified on an ANSI US keyboard,
+# issue #1). It changes the keys that exist: ANSI has the backslash key (LED 62)
+# and no 77 and 7e, so the predefined `keys` zone differs. The graphical editor
+# has a layout selector that writes this line.
 # layout = "iso-fr"
 
 # --- zones -----------------------------------------------------------------

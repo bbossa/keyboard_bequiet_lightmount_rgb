@@ -8,6 +8,7 @@ the keys that exist differ (ISO has 77 and 7e, ANSI has 62 instead).
 ISO_FR, ANSI_US = 'iso-fr', 'ansi-us'
 NAMES = (ISO_FR, ANSI_US)
 DEFAULT = ISO_FR
+LABELS = {ISO_FR: 'ISO French', ANSI_US: 'ANSI US'}  # displayed names (the GUI translates them)
 
 UNUSED = (0x62, 0x89)              # never written by IO Center
 UNUSED_BY_LAYOUT = {

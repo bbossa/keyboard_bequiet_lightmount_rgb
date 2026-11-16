@@ -128,6 +128,25 @@ class Model:
 
     # --- edits ------------------------------------------------------------------------
 
+    def set_layout(self, name):
+        """Switch the physical layout. The predefined zones (top, knob, keys, left, right)
+        follow it, minus the LEDs of the custom zones; the LEDs that do not exist in the
+        new layout are removed from the custom zones. Returns the removed LED indexes."""
+        if name not in layout.NAMES or name == self.layout:
+            return set()
+        custom = {n: z for n, z in self.zones.items() if n not in layout.ZONES}
+        removed = set()
+        for zone in custom.values():
+            gone = zone.leds - set(layout.all_leds(name))
+            zone.leds -= gone
+            removed |= gone
+        owned = set().union(*(z.leds for z in custom.values())) if custom else set()
+        for zone_name in layout.ZONES:
+            if zone_name in self.zones:
+                self.zones[zone_name].leds = set(layout.zones(name)[zone_name]) - owned
+        self.layout = name
+        return removed
+
     def assign(self, leds, name):
         """Put `leds` in zone `name`, taking them out of any other zone."""
         leds = set(leds)

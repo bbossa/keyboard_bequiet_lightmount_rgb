@@ -76,7 +76,7 @@ The service (`lightmount watch`) applies the zones at startup. After editing the
 
 ## Graphical editor (preview)
 
-A GTK4 editor draws the keyboard (ISO French layout, or ANSI US with `layout = "ansi-us"` in `[device]`, experimental) and edits the zones and alerts: select keys with the mouse, create or change zones, pick colors, preview them live on the keyboard, then save (the config is rewritten keeping its comments, the previous file is kept as `config.toml.bak`, and the service rereads it).
+A GTK4 editor draws the keyboard (the layout is chosen with a selector in the header: ISO French or ANSI US; the keyboard is redrawn for it and saving writes `layout = "..."` in `[device]`) and edits the zones and alerts: select keys with the mouse, create or change zones, pick colors, preview them live on the keyboard, then save (the config is rewritten keeping its comments, the previous file is kept as `config.toml.bak`, and the service rereads it).
 
 Not packaged yet: run it from a checkout, with PyGObject and GTK 4 installed (Arch: `python-gobject gtk4`, Debian/Ubuntu: `python3-gi gir1.2-gtk-4.0`, Fedora: `python3-gobject gtk4`):
 

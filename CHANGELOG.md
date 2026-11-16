@@ -6,6 +6,12 @@ The section of a version is used as the notes of its GitHub release.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-16
+
+### Added
+
+- The graphical editor has a layout selector (ISO French / ANSI US) in its header: the keyboard is redrawn for the chosen layout, the predefined zones follow it, custom zones lose the LEDs that do not exist in it, and Save writes `layout = "..."` in `[device]` (merged with the existing table: `usb_path`, `allow_unknown_firmware` and the comments are kept). The firmware reports no layout, so the choice stays manual.
+
 ## [0.3.1] - 2026-11-16
 
 ### Fixed

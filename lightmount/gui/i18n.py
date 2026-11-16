@@ -8,6 +8,12 @@ FR = {
     'Save': 'Enregistrer',
     'Revert': 'Annuler les modifications',
     'Live preview': 'Aperçu en direct',
+    'Layout': 'Disposition',
+    'ISO French': 'ISO français',
+    'Physical layout of the keyboard: which keys exist, and where':
+        'Disposition physique du clavier : quelles touches existent, et où',
+    'LEDs that do not exist in this layout were removed from their zones: {leds}':
+        'Les LED qui n\'existent pas dans cette disposition ont été retirées de leurs zones : {leds}',
     'Show the changes on the keyboard before saving':
         'Afficher les modifications sur le clavier avant de les enregistrer',
     'Zones': 'Zones',

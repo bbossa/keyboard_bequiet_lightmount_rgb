@@ -165,14 +165,32 @@ class Model(unittest.TestCase):
         self.assertEqual(len(m.errors), 2)
         self.assertEqual(m.alerts['normal'], '00ff00')
 
+    def test_set_layout(self):
+        m = model.Model({})
+        m.new_zone({0x77, 0x7e, 0x2e}, 'ffffff')
+        removed = m.set_layout(layout.ANSI_US)
+        self.assertEqual(removed, {0x77, 0x7e})           # ISO-only LEDs, out of the custom zone
+        self.assertEqual(m.zones['zone6'].leds, {0x2e})
+        self.assertIn(0x62, m.zones['keys'].leds)          # the predefined keys zone follows the layout
+        self.assertNotIn(0x77, m.zones['keys'].leds)
+        self.assertNotIn(0x2e, m.zones['keys'].leds)       # ... minus the LEDs of the custom zone
+        self.assertEqual(m.validate()[0], [])
+        self.assertEqual(m.set_layout(layout.ANSI_US), set())  # same layout: no-op
+        m.set_layout(layout.ISO_FR)
+        self.assertIn(0x77, m.zones['keys'].leds)
+        self.assertEqual(m.zones['zone6'].leds, {0x2e})     # a custom zone is not restored
+
     def test_save_from_model(self):
         with tempfile.TemporaryDirectory() as d:
             path = os.path.join(d, 'config.toml')
             m = model.Model(example())
             m.zones['knob'].color = '00ff00'
+            m.set_layout(layout.ANSI_US)
             raw = m.raw()
-            save.write(path, raw['zones'], raw['alerts'])
-            self.assertEqual(config.load(path)[0]['zones']['knob']['color'], (0, 0xff, 0))
+            save.write(path, raw['zones'], raw['alerts'], device={'layout': raw['device']['layout']})
+            cfg = config.load(path)[0]
+            self.assertEqual(cfg['zones']['knob']['color'], (0, 0xff, 0))
+            self.assertEqual(cfg['device']['layout'], layout.ANSI_US)
 
 
 if __name__ == '__main__':

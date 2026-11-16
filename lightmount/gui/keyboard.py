@@ -6,6 +6,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('PangoCairo', '1.0')
 from gi.repository import Gdk, GObject, Gtk, Pango, PangoCairo  # noqa: E402
 
+from .. import layout  # noqa: E402
 from . import geometry  # noqa: E402
 from .i18n import _  # noqa: E402
 
@@ -41,6 +42,12 @@ class KeyboardView(Gtk.DrawingArea):
         self.add_controller(click)
         self.base = set()        # selection kept during a Ctrl+drag
         self.double = False      # the release of a double-click is not a click
+
+    def set_layout(self, name):
+        """Redraw with another physical layout; the selection keeps only the LEDs that exist in it."""
+        self.shapes = geometry.shapes(name)
+        self.selection &= set(layout.all_leds(name))
+        self.queue_draw()
 
     # --- coordinates --------------------------------------------------------------------
 
