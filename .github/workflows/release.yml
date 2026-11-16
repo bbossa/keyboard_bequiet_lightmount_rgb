@@ -73,10 +73,15 @@ jobs:
           grep -q "^sha256sums=('$sum')" dist/PKGBUILD
           (cd dist && sha256sum -- * > SHA256SUMS)
           ls -l dist
-      - name: Create the release
+      - name: Create the release (idempotent: a re-run updates the existing one)
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
         run: |
           packaging/changelog-notes.sh "${TAG#v}" > "$RUNNER_TEMP/notes.md"
-          gh release create "$TAG" dist/* --verify-tag --title "lightmount ${TAG#v}" --notes-file "$RUNNER_TEMP/notes.md"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "lightmount ${TAG#v}" --notes-file "$RUNNER_TEMP/notes.md"
+            gh release upload "$TAG" dist/* --clobber
+          else
+            gh release create "$TAG" dist/* --verify-tag --title "lightmount ${TAG#v}" --notes-file "$RUNNER_TEMP/notes.md"
+          fi
