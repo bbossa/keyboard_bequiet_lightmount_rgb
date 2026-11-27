@@ -73,6 +73,18 @@ Source: `PLAN-1.0.md` and `PLAN-GUI.md` (private notes), `README.md`, `CHANGELOG
 | R-050 | When a notable change is made, the maintainer shall add a line to `## [Unreleased]` in `CHANGELOG.md`. | M | ongoing |
 | R-051 | When 1.0.0 is released, the GitHub release notes shall be the 1.0.0 section of the changelog. | M | todo |
 
+## 7. USB interface binding (opt-in, issue #3, ADR-0010)
+
+| ID | Requirement | Pri | Status |
+|---|---|---|---|
+| R-060 | Where the user passes `--usbhid-bind` to `install/install.sh` (root), the system shall install a udev rule and a systemd template unit that bind USB interface 03 of `373f:0002` to `usbhid`. | M | todo |
+| R-061 | When a USB interface with `idVendor` `373f`, `idProduct` `0002` and `bInterfaceNumber` `03` is added, the system shall bind it to `usbhid`, covering both boot (coldplug) and replug. | M | todo |
+| R-062 | The udev rule shall match on vendor/product IDs and interface number, never on the bus path (e.g. `1-2:1.3`). | M | todo |
+| R-063 | `--usbhid-bind` shall be idempotent and shall support `--dry-run` like the other install steps. | M | todo |
+| R-064 | `install/uninstall.sh` shall report the two installed files and explain how to remove them. | S | todo |
+| R-065 | The packages (`Makefile`, PKGBUILD, `.deb`) shall not install the bind rule or unit; the README shall document the opt-in step. | M | todo |
+| R-066 | The README troubleshooting shall describe the symptom (no `hidraw` for the lighting interface) and point to `sudo install/install.sh --usbhid-bind`. | S | todo |
+
 ## Out of scope for 1.0 (deferred)
 
 - Layers mode like IO Center (rejected 2026-10-28, see ADR-0004; reconsider after use).

@@ -42,7 +42,17 @@ Order: decisions first (they unblock code), then packaging, then editor, then VM
 - [ ] Fix what the VMs reveal
 - [ ] README "Tested on" and minimum GTK (R-032, R-033)
 
-## 6. Release
+## 6. USB interface binding (issue #3, ADR-0010, R-060 to R-066)
+
+- [ ] `install/71-bequiet-light-mount-usbhid-bind.rules`: match `373f`/`0002`/`bInterfaceNumber=="03"`, `SYSTEMD_WANTS+=lightmount-usbhid-bind@.service` (R-061, R-062)
+- [ ] `install/lightmount-usbhid-bind@.service`: oneshot template writing `%I` to `/sys/bus/usb/drivers/usbhid/bind` (R-061)
+- [ ] `install.sh --usbhid-bind` (root, idempotent, `--dry-run`): install both files, `daemon-reload`, `udevadm control --reload`, trigger already-present matching interfaces (R-060, R-063)
+- [ ] `uninstall.sh`: report the two files + removal command (R-064)
+- [ ] README: opt-in step in Install, symptom in Troubleshooting (R-065, R-066); CHANGELOG `Unreleased` (R-050)
+- [ ] Not in `Makefile`/PKGBUILD/`.deb` (R-065); `bash -n` + `--dry-run` test of the new option
+- [ ] Comment on issue #3 linking ADR-0010 and R-060 to R-066
+
+## 7. Release
 - [ ] CHANGELOG 1.0.0 section, release notes (R-050, R-051)
 - [ ] Tag v1.0.0
 - [ ] AUR publication when registration reopens (R-028, optional)

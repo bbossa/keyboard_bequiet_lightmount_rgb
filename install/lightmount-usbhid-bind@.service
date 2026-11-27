@@ -1,0 +1,6 @@
+[Unit]
+Description=Bind be quiet! Light Mount USB interface %I to usbhid (lightmount, ADR-0010)
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'i="$${1##*/}"; printf "%%s" "$$i" > /sys/bus/usb/drivers/usbhid/bind' sh %I

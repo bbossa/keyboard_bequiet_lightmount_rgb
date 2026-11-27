@@ -6,6 +6,10 @@ The section of a version is used as the notes of its GitHub release.
 
 ## [Unreleased]
 
+### Added
+
+- Optional install step `sudo install/install.sh --usbhid-bind`: installs a udev rule (`71-bequiet-light-mount-usbhid-bind.rules`) and a systemd template unit (`lightmount-usbhid-bind@.service`) that bind USB interface 03 of the keyboard (`373f:0002`) to `usbhid` when it appears — boot and replug. Needed on some systems (e.g. Bazzite) where the interface is not bound automatically. Opt-in only: the packages do not install these files; `uninstall.sh` reports them (issue #3, ADR-0010, R-060 to R-066).
+
 ## [0.4.0] - 2026-11-16
 
 ### Added

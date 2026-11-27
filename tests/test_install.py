@@ -126,6 +126,20 @@ class Install(unittest.TestCase):
         result = self.run_script(INSTALL, '--udev', ok=False)
         self.assertIn('needs root', result.stderr)
 
+    def test_usbhid_bind_needs_root(self):  # R-060: root-only, like --udev
+        if os.getuid() == 0:
+            self.skipTest('running as root')
+        result = self.run_script(INSTALL, '--usbhid-bind', ok=False)
+        self.assertIn('needs root', result.stderr)
+
+    def test_usbhid_bind_dry_run(self):  # R-060, R-063: previews rule + unit, reloads, changes nothing
+        out = self.run_script(INSTALL, '--usbhid-bind', '--dry-run').stdout
+        self.assertIn('would install  /etc/udev/rules.d/71-bequiet-light-mount-usbhid-bind.rules', out)
+        self.assertIn('would install  /etc/systemd/system/lightmount-usbhid-bind@.service', out)
+        self.assertIn('would run: systemctl daemon-reload', out)
+        self.assertIn('would run: udevadm control --reload', out)
+        self.assertFalse(os.path.exists('/etc/udev/rules.d/71-bequiet-light-mount-usbhid-bind.rules'))
+
     def test_unknown_option(self):
         self.assertEqual(self.run_script(INSTALL, '--bogus', ok=False).returncode, 2)
 

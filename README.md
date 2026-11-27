@@ -27,9 +27,12 @@ cd keyboard_bequiet_lightmount_rgb
 install/install.sh --dry-run    # shows what would be done
 install/install.sh              # user part: command, config, service, shell hooks (no sudo)
 sudo install/install.sh --udev  # once: lets your session access the keyboard
+sudo install/install.sh --usbhid-bind  # optional: see below
 ```
 
 `install.sh` links `~/.local/bin/lightmount` to the checkout: keep the repository where it is. Running it again only updates what changed; an existing config is never replaced.
+
+**Optional — `--usbhid-bind`:** on some systems (e.g. Bazzite), USB interface 03 of the keyboard (`373f:0002`) is not bound to `usbhid` automatically, so no `hidraw` node exists for the lighting and lightmount cannot reach the LEDs. This opt-in step installs a udev rule and a systemd template unit that bind the interface (matched on vendor/product ID + interface number, never on the changeable bus path) both at boot and on replug. The packages never install it (issue #3, ADR-0010).
 
 ### Arch Linux
 
@@ -138,6 +141,7 @@ Only the exit status is used. Notifications are matched on their urgency only; t
 | --- | --- |
 | `Light Mount not found` | Keyboard unplugged, or a different model. Check `lsusb -d 373f:0002`. |
 | `/dev/hidrawN: permission denied` | The udev rule is missing: `sudo install/install.sh --udev`, then replug the keyboard. |
+| No `hidraw` node for the lighting interface (LEDs unreachable) | USB interface 03 is not bound to `usbhid` on this system: `sudo install/install.sh --usbhid-bind` (issue #3), then replug the keyboard. |
 | `unknown version …, nothing written` | Untested version. Please open an issue with the `lightmount status` output; `allow_unknown_firmware = true` forces writing. |
 | `several Light Mount keyboards` | Set `usb_path` in `[device]` to one of the listed paths. |
 | Colors change by themselves | An open IO Center (web) tab reapplies its own settings: close it while lightmount runs. |

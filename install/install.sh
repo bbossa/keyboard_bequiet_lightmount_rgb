@@ -3,7 +3,8 @@
 #
 # Usage:
 #   install/install.sh [--dry-run]            user part, no sudo: command, config, service, shell hooks
-#   sudo install/install.sh --udev [--dry-run]   udev rule giving the logged-in user access to the keyboard
+#   sudo install/install.sh --udev [--dry-run]     udev rule giving the logged-in user access to the keyboard
+#   sudo install/install.sh --usbhid-bind [--dry-run]  opt-in: bind USB interface 03 to usbhid (issue #3, ADR-0010)
 #
 # The command is a symlink to this checkout: keep the repository where it is
 # (or run this script again after moving it).
@@ -13,14 +14,20 @@ here=$(dirname "$(readlink -f "$0")")
 repo=$(readlink -f "$here/..")
 rule_name=70-bequiet-light-mount.rules
 rule_dest=/etc/udev/rules.d/$rule_name
+usbhid_rule_name=71-bequiet-light-mount-usbhid-bind.rules
+usbhid_rule_dest=/etc/udev/rules.d/$usbhid_rule_name
+usbhid_unit_name='lightmount-usbhid-bind@.service'
+usbhid_unit_dest=/etc/systemd/system/$usbhid_unit_name
 
 dry_run=0
 udev=0
+usbhid=0
 for arg in "$@"; do
     case $arg in
         --dry-run) dry_run=1 ;;
         --udev) udev=1 ;;
-        -h | --help) sed -n '2,10s/^# \{0,1\}//p' "$0"; exit 0 ;;
+        --usbhid-bind) usbhid=1 ;;
+        -h | --help) sed -n '2,11s/^# \{0,1\}//p' "$0"; exit 0 ;;
         *) echo "unknown option: $arg (see --help)" >&2; exit 2 ;;
     esac
 done
@@ -55,15 +62,37 @@ put() {
     fi
 }
 
-# --- udev rule (root) -------------------------------------------------------
+# --- udev rule / usbhid bind (root) ------------------------------------------
 
-if ((udev)); then
-    ((dry_run)) || [ "$(id -u)" -eq 0 ] || die "--udev needs root: sudo $0 --udev"
-    say "udev rule ($rule_dest): lets the logged-in user open the keyboard's hidraw nodes"
-    put "$here/$rule_name" "$rule_dest" 644
-    if ((changed)); then
-        run udevadm control --reload
-        run udevadm trigger --action=change --subsystem-match=hidraw
+if ((udev || usbhid)); then
+    ((dry_run)) || [ "$(id -u)" -eq 0 ] || die "this needs root: sudo $0 --udev [--usbhid-bind]"
+    if ((udev)); then
+        say "udev rule ($rule_dest): lets the logged-in user open the keyboard's hidraw nodes"
+        put "$here/$rule_name" "$rule_dest" 644
+        if ((changed)); then
+            run udevadm control --reload
+            run udevadm trigger --action=change --subsystem-match=hidraw
+        fi
+    fi
+    if ((usbhid)); then
+        say "usbhid bind (opt-in, issue #3 / ADR-0010): binds USB interface 03 of 373f:0002 to usbhid"
+        say "  rule $usbhid_rule_dest"
+        say "  unit $usbhid_unit_dest"
+        put "$here/$usbhid_rule_name" "$usbhid_rule_dest" 644
+        rule_changed=$changed
+        put "$here/$usbhid_unit_name" "$usbhid_unit_dest" 644
+        if ((rule_changed || changed)); then
+            run systemctl daemon-reload
+            run udevadm control --reload
+            # interfaces already present (boot case): replay add on matching devices only
+            for iface in /sys/bus/usb/devices/*:1.3; do
+                [ -d "$iface" ] || continue
+                if [ "$(cat "$iface/idVendor" 2>/dev/null)" = "373f" ] \
+                        && [ "$(cat "$iface/idProduct" 2>/dev/null)" = "0002" ]; then
+                    run udevadm trigger --action=add "$iface"
+                fi
+            done
+        fi
     fi
     exit 0
 fi
@@ -150,6 +179,8 @@ if [ ! -f "$rule_dest" ]; then
     say ""
     say "Next step, needs root once: the udev rule gives your session access to the keyboard."
     say "  sudo $0 --udev"
+    say "Optional, only if USB interface 03 is not bound to usbhid on your system (no hidraw for the LEDs, issue #3):"
+    say "  sudo $0 --usbhid-bind"
 fi
 say ""
 say "Verify with: lightmount status"

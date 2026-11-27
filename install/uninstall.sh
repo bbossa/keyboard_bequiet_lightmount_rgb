@@ -11,6 +11,8 @@ set -euo pipefail
 here=$(dirname "$(readlink -f "$0")")
 repo=$(readlink -f "$here/..")
 rule_dest=/etc/udev/rules.d/70-bequiet-light-mount.rules
+usbhid_rule_dest=/etc/udev/rules.d/71-bequiet-light-mount-usbhid-bind.rules
+usbhid_unit_dest=/etc/systemd/system/lightmount-usbhid-bind@.service
 
 dry_run=0
 purge=0
@@ -93,4 +95,10 @@ if [ -e "$rule_dest" ]; then
     say ""
     say "The udev rule is left in place (it only grants access to this keyboard). To remove it:"
     say "  sudo rm $rule_dest && sudo udevadm control --reload"
+fi
+
+if [ -e "$usbhid_rule_dest" ] || [ -e "$usbhid_unit_dest" ]; then
+    say ""
+    say "The opt-in usbhid-bind files are left in place (issue #3, ADR-0010). To remove them:"
+    say "  sudo rm $usbhid_rule_dest $usbhid_unit_dest && sudo systemctl daemon-reload && sudo udevadm control --reload"
 fi
